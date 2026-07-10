@@ -115,3 +115,51 @@ public sealed record ComponentCssTokensData(
 public sealed record CanvasContractsData(
     string Query,
     IReadOnlyList<CanvasContractDocument> Contracts);
+
+public sealed record ComponentLibraryDocument(
+    string Name,
+    string PackageId,
+    string Purpose,
+    bool ProductRuntimeLibrary,
+    int ComponentCount,
+    IReadOnlyList<string> Dependencies,
+    IReadOnlyList<string> UseFor,
+    IReadOnlyList<string> AvoidFor,
+    IReadOnlyList<string> ServiceRegistrations,
+    IReadOnlyList<string> HeadAssets,
+    IReadOnlyList<string> BodyAssets,
+    IReadOnlyList<string> Stylesheets,
+    string? SandboxRoute,
+    IReadOnlyList<string> Notes);
+
+public sealed record AppShellGuideData(
+    string Mode,
+    IReadOnlyList<string> AvailableModes,
+    IReadOnlyList<string> RequiredSetup,
+    IReadOnlyList<string> ComponentRoles,
+    string LayoutExample,
+    string PageExample,
+    IReadOnlyList<string> MenuRules,
+    IReadOnlyList<string> LayoutRules,
+    IReadOnlyList<string> ResponsiveRules,
+    IReadOnlyList<string> ValidationChecklist);
+
+public sealed record ComponentRecommendationData(
+    string UseCase,
+    string Constraints,
+    IReadOnlyList<string> MatchedDecisionGuides,
+    IReadOnlyList<ComponentRecommendationDocument> Recommendations,
+    IReadOnlyList<ComponentRecommendationDocument> Alternatives,
+    IReadOnlyList<string> RequiredSetup,
+    IReadOnlyList<string> CompositionPlan,
+    IReadOnlyList<string> FollowUpTools);
+
+public sealed record ComponentRecommendationDocument(
+    string Name,
+    string Library,
+    string Role,
+    string Why,
+    IReadOnlyList<string> UseFor,
+    IReadOnlyList<string> AvoidFor,
+    IReadOnlyList<string> Dependencies,
+    double Score);

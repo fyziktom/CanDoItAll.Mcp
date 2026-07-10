@@ -80,6 +80,39 @@ public sealed class ComponentsTools(
         return ExecuteAsync("canvas_contract_get", () => catalogService.GetCanvasContracts(query));
     }
 
+    [McpServerTool(Name = "components_libraries_list", ReadOnly = true, Idempotent = true, OpenWorld = false, UseStructuredContent = true)]
+    [Description("Lists every supported non-WebGL Components library with its role, dependencies, setup, assets, styles, and sandbox proof route. Use this before adding a new Components package or hand-loading assets.")]
+    public Task<McpToolEnvelope<IReadOnlyList<ComponentLibraryDocument>>> ComponentsLibrariesListAsync(CancellationToken cancellationToken = default)
+    {
+        _ = cancellationToken;
+        return ExecuteAsync("components_libraries_list", catalogService.GetLibraries);
+    }
+
+    [McpServerTool(Name = "app_shell_guide_get", ReadOnly = true, Idempotent = true, OpenWorld = false, UseStructuredContent = true)]
+    [Description("Returns the canonical BaseLib app-shell recipe for ThemeHost, Layout, SideMenu, Body, PageScaffold, overlay hosts, scrolling, route synchronization, overflow, and responsive behavior. Call this before creating or refactoring an application layout or primary menu.")]
+    public Task<McpToolEnvelope<AppShellGuideData>> AppShellGuideGetAsync(
+        string? mode = null,
+        CancellationToken cancellationToken = default)
+    {
+        _ = cancellationToken;
+        return ExecuteAsync("app_shell_guide_get", () => catalogService.GetAppShellGuide(mode));
+    }
+
+    [McpServerTool(Name = "components_recommend", ReadOnly = true, Idempotent = true, OpenWorld = false, UseStructuredContent = true)]
+    [Description("Recommends the best non-WebGL shared components for a concrete use case, explains the choice and alternatives, and returns required setup, composition rules, and exact follow-up MCP calls. Use this before choosing components or inventing custom UI structure.")]
+    public Task<McpToolEnvelope<ComponentRecommendationData>> ComponentsRecommendAsync(
+        string useCase,
+        string? constraints = null,
+        string? library = null,
+        int limit = 6,
+        CancellationToken cancellationToken = default)
+    {
+        _ = cancellationToken;
+        return ExecuteAsync(
+            "components_recommend",
+            () => catalogService.RecommendComponents(useCase, constraints, library, limit));
+    }
+
     private Task<McpToolEnvelope<T>> ExecuteAsync<T>(string toolName, Func<T> callback)
     {
         var correlationId = CorrelationIdFactory.Create();

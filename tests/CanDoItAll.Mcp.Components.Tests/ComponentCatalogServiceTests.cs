@@ -91,11 +91,12 @@ public sealed class ComponentCatalogServiceTests
 
         var groups = service.GetGroups();
 
-        Assert.Equal(11, groups.Count);
+        Assert.Equal(12, groups.Count);
         Assert.Contains(groups, group => string.Equals(group.Key, "charts", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(groups, group => string.Equals(group.Key, "mermaid", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(groups, group => string.Equals(group.Key, "canvas", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(groups, group => string.Equals(group.Key, "foundations", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(groups, group => string.Equals(group.Key, "qr", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -218,6 +219,92 @@ public sealed class ComponentCatalogServiceTests
     }
 
     [Fact]
+    public void Component_Get_Returns_Side_Menu_Metadata_Usage_And_Css()
+    {
+        var service = CreateService();
+
+        var component = service.GetComponent("SideMenu");
+        var usage = service.GetUsageExamples("SideMenu", limit: 20);
+        var css = service.GetCssTokens("SideMenu");
+
+        Assert.Equal("BaseLib", component.Library);
+        Assert.EndsWith(Path.Combine("Components", "Navigation", "SideMenu.razor"), component.SourcePath, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(component.Parameters, parameter => string.Equals(parameter.Name, "MenuId", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(component.Parameters, parameter => string.Equals(parameter.Name, "MoreItems", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(component.Guidance.CompositionRules, rule => rule.Contains("SideMenuService", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(component.Guidance.CompositionRules, rule => rule.Contains("small breakpoint", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(usage.UsageExamples, example => example.FilePath.EndsWith("NavigationSideMenu.razor", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(css.SourceFiles, file => file.EndsWith(Path.Combine("Tailwind", "navigation", "side-menu.css"), StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void Catalog_Includes_Overlay_And_QrCode_Without_WebGl()
+    {
+        var service = CreateService();
+
+        var overlay = service.GetComponent("OverlayWindow");
+        var qrCode = service.GetComponent("QrCodeView");
+        var qrScanner = service.GetComponent("QrScanButton");
+        var components = service.GetIndex().Components;
+
+        Assert.Equal("OverlayLib", overlay.Library);
+        Assert.Contains(overlay.Parameters, parameter => string.Equals(parameter.Name, "ContainerSelector", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal("QRCode", qrCode.Library);
+        Assert.Contains(qrCode.Parameters, parameter => string.Equals(parameter.Name, "Payload", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal("QRCode", qrScanner.Library);
+        Assert.DoesNotContain(components, component => component.Library.Contains("WebGl", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void Libraries_List_Explains_Setup_And_Excludes_WebGl()
+    {
+        var service = CreateService();
+
+        var libraries = service.GetLibraries();
+        var baseLib = Assert.Single(libraries, library => string.Equals(library.Name, "BaseLib", StringComparison.OrdinalIgnoreCase));
+        var overlay = Assert.Single(libraries, library => string.Equals(library.Name, "OverlayLib", StringComparison.OrdinalIgnoreCase));
+        var qrCode = Assert.Single(libraries, library => string.Equals(library.Name, "QRCode", StringComparison.OrdinalIgnoreCase));
+
+        Assert.Equal(8, libraries.Count);
+        Assert.True(baseLib.ComponentCount >= 160);
+        Assert.Contains(baseLib.ServiceRegistrations, registration => registration.Contains("AddCanDoItAllBaseLib", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(overlay.BodyAssets, asset => asset.Contains("OverlayLibBodyAssets", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal("/groups/qr", qrCode.SandboxRoute);
+        Assert.Contains(qrCode.Notes, note => note.Contains("DialogHost", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(libraries, library => library.Name.Contains("WebGl", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void App_Shell_Guide_Contains_The_Canonical_Menu_And_Scroll_Model()
+    {
+        var service = CreateService();
+
+        var guide = service.GetAppShellGuide("full-height");
+
+        Assert.Equal("full-height", guide.Mode);
+        Assert.Contains("SideMenu", guide.LayoutExample, StringComparison.Ordinal);
+        Assert.Contains("DialogHost", guide.LayoutExample, StringComparison.Ordinal);
+        Assert.Contains(guide.MenuRules, rule => rule.Contains("ItemSelected", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(guide.LayoutRules, rule => rule.Contains("one vertical scroll owner", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(guide.ResponsiveRules, rule => rule.Contains("768px", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Theory]
+    [InlineData("responsive application layout with side navigation", "SideMenu")]
+    [InlineData("scan a QR code with camera fallback", "QrScanButton")]
+    [InlineData("a floating resizable inspector window", "OverlayWindow")]
+    [InlineData("multi step sequential wizard", "Steps")]
+    public void Recommendations_Return_The_Right_Component_For_The_Use_Case(string useCase, string expectedComponent)
+    {
+        var service = CreateService();
+
+        var recommendation = service.RecommendComponents(useCase);
+
+        Assert.Contains(recommendation.Recommendations, component => string.Equals(component.Name, expectedComponent, StringComparison.OrdinalIgnoreCase));
+        Assert.NotEmpty(recommendation.FollowUpTools);
+    }
+
+    [Fact]
     public void All_Discovered_Components_Resolve_To_Existing_Source_Paths()
     {
         var service = CreateService();
@@ -263,10 +350,13 @@ public sealed class ComponentCatalogServiceTests
             },
             Catalog = new CatalogOptions
             {
+                CommonRoot = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.Common"),
                 BaseLibRoot = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.BaseLib"),
                 CanvasLibRoot = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.CanvasLib"),
                 ChartsRoot = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.Charts"),
                 MermaidRoot = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.Mermaid"),
+                OverlayLibRoot = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.OverlayLib"),
+                QrCodeRoot = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.QRCode"),
                 SandboxRoot = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.Sandbox")
             }
         });

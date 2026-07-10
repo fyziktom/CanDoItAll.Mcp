@@ -5,6 +5,8 @@ using CanDoItAll.Components.BaseLib;
 using CanDoItAll.Components.CanvasLib;
 using CanDoItAll.Components.Charts;
 using CanDoItAll.Components.Mermaid;
+using CanDoItAll.Components.OverlayLib;
+using CanDoItAll.Components.QRCode;
 using CanDoItAll.Components.Sandbox;
 using CanDoItAll.Mcp.Components.Configuration;
 using CanDoItAll.Mcp.Core.Contracts;
@@ -125,7 +127,9 @@ public sealed partial class ComponentCatalogService
         {
             "CanvasLib" => CanvasLibStylesheets,
             "Charts" => ["_content/Blazor-ApexCharts/css/apexcharts.css"],
-            "Mermaid" => ["_content/CanDoItAll.Components.Mermaid/js/mermaidDiagram.js"],
+            "Mermaid" => ["_content/CanDoItAll.Components.Mermaid/CanDoItAll.Components.Mermaid.bundle.scp.css"],
+            "OverlayLib" => ["_content/CanDoItAll.Components.OverlayLib/css/overlay-window.css"],
+            "QRCode" => ["_content/CanDoItAll.Components.QRCode/CanDoItAll.Components.QRCode.bundle.scp.css"],
             _ => new[] { "_content/CanDoItAll.Components.BaseLib/css/output.css" }
         };
         var sourceFiles = ResolveCssSourceFiles(resolvedComponent);
@@ -209,6 +213,8 @@ public sealed partial class ComponentCatalogService
         var canvasLibRoot = Path.GetFullPath(Path.Combine(workspaceRoot, options.Catalog.CanvasLibRoot));
         var chartsRoot = Path.GetFullPath(Path.Combine(workspaceRoot, options.Catalog.ChartsRoot));
         var mermaidRoot = Path.GetFullPath(Path.Combine(workspaceRoot, options.Catalog.MermaidRoot));
+        var overlayLibRoot = Path.GetFullPath(Path.Combine(workspaceRoot, options.Catalog.OverlayLibRoot));
+        var qrCodeRoot = Path.GetFullPath(Path.Combine(workspaceRoot, options.Catalog.QrCodeRoot));
         var sandboxRoot = Path.GetFullPath(Path.Combine(workspaceRoot, options.Catalog.SandboxRoot));
 
         var groups = BuildGroups();
@@ -220,7 +226,9 @@ public sealed partial class ComponentCatalogService
             new LibraryDescriptor("BaseLib", typeof(Button).Assembly, baseLibRoot, "CanDoItAll.Components.BaseLib"),
             new LibraryDescriptor("CanvasLib", typeof(CanvasWorkbench).Assembly, canvasLibRoot, "CanDoItAll.Components.CanvasLib"),
             new LibraryDescriptor("Charts", typeof(CdaChart).Assembly, chartsRoot, "CanDoItAll.Components.Charts"),
-            new LibraryDescriptor("Mermaid", typeof(MermaidDiagram).Assembly, mermaidRoot, "CanDoItAll.Components.Mermaid")
+            new LibraryDescriptor("Mermaid", typeof(MermaidDiagram).Assembly, mermaidRoot, "CanDoItAll.Components.Mermaid"),
+            new LibraryDescriptor("OverlayLib", typeof(OverlayWindow).Assembly, overlayLibRoot, "CanDoItAll.Components.OverlayLib"),
+            new LibraryDescriptor("QRCode", typeof(QRCodeNamespaceMarker).Assembly, qrCodeRoot, "CanDoItAll.Components.QRCode")
         };
 
         var componentTypes = libraries
@@ -294,7 +302,8 @@ public sealed partial class ComponentCatalogService
                 typeof(IComponent).IsAssignableFrom(type) &&
                 type.IsClass &&
                 !type.IsAbstract &&
-                string.Equals(type.Namespace, library.ComponentNamespace, StringComparison.Ordinal));
+                (string.Equals(type.Namespace, library.ComponentNamespace, StringComparison.Ordinal) ||
+                 type.Namespace?.StartsWith($"{library.ComponentNamespace}.", StringComparison.Ordinal) == true));
     }
 
     private static ComponentDocument BuildComponentDocument(
@@ -1054,6 +1063,19 @@ public sealed partial class ComponentCatalogService
         if (string.Equals(library, "Mermaid", StringComparison.OrdinalIgnoreCase))
         {
             return [ComponentRepositoryPath(Path.Combine("src", "CanDoItAll.Components.Mermaid", "Components", "MermaidDiagram.razor.css"))];
+        }
+
+        if (string.Equals(library, "OverlayLib", StringComparison.OrdinalIgnoreCase))
+        {
+            return [ComponentRepositoryPath(Path.Combine("src", "CanDoItAll.Components.OverlayLib", "wwwroot", "css", "overlay-window.css"))];
+        }
+
+        if (string.Equals(library, "QRCode", StringComparison.OrdinalIgnoreCase))
+        {
+            var scopedCssPath = $"{sourcePath}.css";
+            return File.Exists(scopedCssPath)
+                ? [scopedCssPath]
+                : [];
         }
 
         if (!string.Equals(library, "BaseLib", StringComparison.OrdinalIgnoreCase))

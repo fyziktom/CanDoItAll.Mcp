@@ -40,9 +40,10 @@ public sealed class ComponentsToolsTests
         Assert.Contains(examples.Data!.Examples, example => string.Equals(example.GroupKey, "canvas", StringComparison.OrdinalIgnoreCase));
 
         Assert.True(groups.Ok);
-        Assert.Equal(11, groups.Data!.Count);
+        Assert.Equal(12, groups.Data!.Count);
         Assert.Contains(groups.Data, group => string.Equals(group.Key, "charts", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(groups.Data, group => string.Equals(group.Key, "mermaid", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(groups.Data, group => string.Equals(group.Key, "qr", StringComparison.OrdinalIgnoreCase));
 
         Assert.True(css.Ok);
         Assert.Contains(css.Data!.Stylesheets, stylesheet => stylesheet.Contains("css/workbench/", StringComparison.OrdinalIgnoreCase));
@@ -50,6 +51,28 @@ public sealed class ComponentsToolsTests
 
         Assert.True(contracts.Ok);
         Assert.Contains(contracts.Data!.Contracts, contract => string.Equals(contract.Name, "CanvasCalendarSurface", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task Tools_Return_Library_AppShell_And_Recommendation_Guidance()
+    {
+        var tools = CreateTools();
+
+        var libraries = await tools.ComponentsLibrariesListAsync();
+        var appShell = await tools.AppShellGuideGetAsync("full-height");
+        var recommendation = await tools.ComponentsRecommendAsync("responsive application layout with side navigation");
+
+        Assert.True(libraries.Ok);
+        Assert.Contains(libraries.Data!, library => string.Equals(library.Name, "QRCode", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(libraries.Data!, library => library.Name.Contains("WebGl", StringComparison.OrdinalIgnoreCase));
+
+        Assert.True(appShell.Ok);
+        Assert.Contains("SideMenu", appShell.Data!.LayoutExample, StringComparison.Ordinal);
+        Assert.Contains(appShell.Data.MenuRules, rule => rule.Contains("MenuId", StringComparison.OrdinalIgnoreCase));
+
+        Assert.True(recommendation.Ok);
+        Assert.Contains(recommendation.Data!.Recommendations, component => string.Equals(component.Name, "SideMenu", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(recommendation.Data.FollowUpTools, tool => tool.StartsWith("app_shell_guide_get", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -89,10 +112,13 @@ public sealed class ComponentsToolsTests
             },
             Catalog = new CatalogOptions
             {
+                CommonRoot = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.Common"),
                 BaseLibRoot = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.BaseLib"),
                 CanvasLibRoot = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.CanvasLib"),
                 ChartsRoot = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.Charts"),
                 MermaidRoot = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.Mermaid"),
+                OverlayLibRoot = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.OverlayLib"),
+                QrCodeRoot = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.QRCode"),
                 SandboxRoot = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.Sandbox")
             }
         });

@@ -18,6 +18,8 @@
     <PackageReference Include="CanDoItAll.Components.Charts" Version="0.1.0" />
     <PackageReference Include="CanDoItAll.Components.Common" Version="0.1.0" />
     <PackageReference Include="CanDoItAll.Components.Mermaid" Version="0.1.0" />
+    <PackageReference Include="CanDoItAll.Components.OverlayLib" Version="0.1.0" />
+    <PackageReference Include="CanDoItAll.Components.QRCode" Version="0.1.0" />
     <PackageReference Include="CanDoItAll.Components.Sandbox" Version="0.1.0" />
     <ProjectReference Include="..\CanDoItAll.Mcp.Core\CanDoItAll.Mcp.Core.csproj" />
   </ItemGroup>

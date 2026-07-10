@@ -2,7 +2,7 @@
 
 ## Purpose
 
-MCP adapter for discovering and inspecting shared component-library capabilities.
+MCP adapter for discovering, selecting, configuring, and proving shared non-WebGL CanDoItAll component-library capabilities.
 
 ## Project Type
 
@@ -16,13 +16,19 @@ dotnet build src/CanDoItAll.Mcp.Components/CanDoItAll.Mcp.Components.csproj
 
 ## References
 
+Component packages indexed by the server:
+
+- `CanDoItAll.Components.BaseLib`
+- `CanDoItAll.Components.CanvasLib`
+- `CanDoItAll.Components.Charts`
+- `CanDoItAll.Components.Common`
+- `CanDoItAll.Components.Mermaid`
+- `CanDoItAll.Components.OverlayLib`
+- `CanDoItAll.Components.QRCode`
+- `CanDoItAll.Components.Sandbox` for curated proof routes and examples
+
 Project references:
 
-- `../CanDoItAll.Components.BaseLib/CanDoItAll.Components.BaseLib.csproj`
-- `../CanDoItAll.Components.CanvasLib/CanDoItAll.Components.CanvasLib.csproj`
-- `../CanDoItAll.Components.Charts/CanDoItAll.Components.Charts.csproj`
-- `../CanDoItAll.Components.Common/CanDoItAll.Components.Common.csproj`
-- `../CanDoItAll.Components.Sandbox/CanDoItAll.Components.Sandbox.csproj`
 - `../CanDoItAll.Mcp.Core/CanDoItAll.Mcp.Core.csproj`
 
 Framework references:
@@ -39,7 +45,19 @@ This project is an adapter for agent-facing tooling. It must stay thin over cano
 
 ## Agent Usage Guidance
 
-Agents should query `component_get` before composing shared UI so they use the component's source path, parameters, CSS notes, sandbox examples, and guidance instead of inventing local structure.
+This MCP intentionally excludes every WebGL library and surface. For all other `CanDoItAll.Components.*` usage, agents must query this MCP before selecting components, adding services/assets, or creating structural CSS.
+
+Use this sequence:
+
+1. `components_libraries_list` for package roles, service registration, generated assets, styles, dependencies, and proof routes.
+2. `components_recommend` with the concrete use case to obtain selected components, alternatives, setup, composition rules, and follow-up calls.
+3. `app_shell_guide_get` before creating or changing an application layout or primary menu.
+4. `component_get`, `component_usage_examples`, and `component_examples` for every shortlisted component.
+5. `component_css_tokens_get` only after the structural choice is settled.
+
+`app_shell_guide_get` is the canonical BaseLib application-shell path: `ThemeHost` -> `Layout` -> `SideMenu` -> `Body`, with routed pages using `PageScaffold`. It defines scroll ownership, route synchronization, menu item sources, height-measured More overflow, bottom utilities, responsive behavior, and the single mounted `DialogHost`, `Tooltip`, and `Notification` hosts.
+
+`SideMenu` is a typed selection model, not an anchor collection. Give it a stable `MenuId`, map `ItemSelected` or `SideMenuService` selections from typed IDs/payloads to application navigation, and do not wrap it in `Sidebar` or create a second mobile menu.
 
 For overlay services, query:
 

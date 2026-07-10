@@ -30,6 +30,9 @@ public sealed class ServerOptions
 public sealed class CatalogOptions
 {
     [Required]
+    public string CommonRoot { get; set; } = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.Common");
+
+    [Required]
     public string BaseLibRoot { get; set; } = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.BaseLib");
 
     [Required]
@@ -40,6 +43,12 @@ public sealed class CatalogOptions
 
     [Required]
     public string MermaidRoot { get; set; } = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.Mermaid");
+
+    [Required]
+    public string OverlayLibRoot { get; set; } = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.OverlayLib");
+
+    [Required]
+    public string QrCodeRoot { get; set; } = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.QRCode");
 
     [Required]
     public string SandboxRoot { get; set; } = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.Sandbox");
@@ -81,10 +90,13 @@ public sealed class McpServerOptionsValidator : IValidateOptions<McpServerOption
             return ValidateOptionsResult.Fail(failures);
         }
 
+        ValidateRoot(workspaceRoot, options.Catalog.CommonRoot, "Catalog.CommonRoot", failures);
         ValidateRoot(workspaceRoot, options.Catalog.BaseLibRoot, "Catalog.BaseLibRoot", failures);
         ValidateRoot(workspaceRoot, options.Catalog.CanvasLibRoot, "Catalog.CanvasLibRoot", failures);
         ValidateRoot(workspaceRoot, options.Catalog.ChartsRoot, "Catalog.ChartsRoot", failures);
         ValidateRoot(workspaceRoot, options.Catalog.MermaidRoot, "Catalog.MermaidRoot", failures);
+        ValidateRoot(workspaceRoot, options.Catalog.OverlayLibRoot, "Catalog.OverlayLibRoot", failures);
+        ValidateRoot(workspaceRoot, options.Catalog.QrCodeRoot, "Catalog.QrCodeRoot", failures);
         ValidateRoot(workspaceRoot, options.Catalog.SandboxRoot, "Catalog.SandboxRoot", failures);
 
         return failures.Count == 0

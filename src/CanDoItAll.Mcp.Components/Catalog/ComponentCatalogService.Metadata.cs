@@ -63,6 +63,52 @@ public sealed partial class ComponentCatalogService
             "Wraps trigger content and forwards hover/focus coordinates to `TooltipService` with shared Tailwind tooltip rendering.",
             "`TooltipTarget Position` uses the same `TooltipPosition` enum as service-opened tooltips, so declarative and imperative tooltip placement rules stay aligned."
         ],
+        ["SideMenu"] =
+        [
+            "Uses the shared `cad-side-menu` styles from `_content/CanDoItAll.Components.BaseLib/css/output.css`, including large and medium rails plus the small-screen top dropdown.",
+            "Measured item-region height drives overflow into More; do not recreate capacity or breakpoint behavior with page-local CSS.",
+            "The menu is already an `<aside>` and should sit directly beside `<Body>` inside `<Layout>`, not inside another `<Sidebar>`."
+        ],
+        ["Layout"] =
+        [
+            "Uses the BaseLib `rz-layout` compatibility contract from `Tailwind/foundation/radzen-layout.css`.",
+            "Use `FitViewport`, `ViewportOffset`, and `LockOverflow` to establish one deliberate shell-level scroll model."
+        ],
+        ["DataGrid"] =
+        [
+            "Uses the shared BaseLib table contract and hardened keyboard, sorting, and selection behavior.",
+            "Prefer typed `DataGridColumn` definitions and grid parameters before wrapping a raw table or adding page-local interaction scripts."
+        ],
+        ["Dialog"] =
+        [
+            "Uses BaseLib dialog structure plus the component's colocated JavaScript module for focus and viewport behavior.",
+            "Mount `<DialogHost />` once for service-driven dialogs; keep direct controlled `<Dialog>` usage for component-owned open state."
+        ],
+        ["ContextMenu"] =
+        [
+            "Uses BaseLib menu structure plus the component's colocated JavaScript module for viewport-aware placement and keyboard behavior.",
+            "Use typed menu items and the shared close/selection pipeline instead of custom absolute menus."
+        ],
+        ["TreeView"] =
+        [
+            "Uses shared `cad-treeview` styles and hardened tree keyboard behavior.",
+            "Keep hierarchical navigation in `TreeView`; do not flatten arbitrary depth into `SideMenu`."
+        ],
+        ["OverlayWindow"] =
+        [
+            "Uses `_content/CanDoItAll.Components.OverlayLib/css/overlay-window.css` plus the runtime loaded by `<OverlayLibBodyAssets />`.",
+            "Container and safe-top selectors define the real placement boundary; avoid copying drag, resize, minimize, or normalization logic into consumers."
+        ],
+        ["QrCodeView"] =
+        [
+            "Uses the QRCode scoped CSS bundle and renders SVG through the registered `IQrCodeRenderer`.",
+            "Keep the payload generic and accessible; domain meaning belongs in the consuming application."
+        ],
+        ["QrScanButton"] =
+        [
+            "Uses the QRCode scoped CSS bundle, BaseLib `DialogService`, and a mounted `<DialogHost />`.",
+            "Camera scanning must retain the manual decoded-text fallback for unavailable or denied camera access."
+        ],
         ["CanvasWorkbench"] =
         [
             "Uses the shared CanvasLib workbench stylesheets exposed by `<CanvasLibHeadAssets />` under `_content/CanDoItAll.Components.CanvasLib/css/workbench/...` plus the typed `CanvasThemeTokenPack` theme vocabulary.",
@@ -101,6 +147,16 @@ public sealed partial class ComponentCatalogService
         [
             "Mermaid components render through the vendored official Mermaid ESM bundle under `_content/CanDoItAll.Components.Mermaid/js/vendor/`.",
             "Consumers should use `MermaidDiagram` and its typed options/events instead of directly importing Mermaid.js in pages."
+        ],
+        ["OverlayLib"] =
+        [
+            "OverlayLib components render against the stylesheet exposed by `<OverlayLibHeadAssets />` and the plain runtime exposed by `<OverlayLibBodyAssets />`.",
+            "Use `OverlayWindowState` as the generic state boundary for placement, size, visibility, and minimized state."
+        ],
+        ["QRCode"] =
+        [
+            "QRCode components render against `_content/CanDoItAll.Components.QRCode/CanDoItAll.Components.QRCode.bundle.scp.css`.",
+            "Register `AddCanDoItAllQrCode()` and keep QR payload semantics in the consuming application."
         ]
     };
     private static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> BaseLibCssSourceFilesByComponent = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase)
@@ -113,6 +169,12 @@ public sealed partial class ComponentCatalogService
         ["FilterBar"] = [@"Tailwind\navigation\page-header.css"],
         ["TreeView"] = [@"Tailwind\navigation\treeview.css"],
         ["TreeViewNodeRow"] = [@"Tailwind\navigation\treeview.css"],
+        ["SideMenu"] = [@"Tailwind\navigation\side-menu.css"],
+        ["SideMenuItem"] = [@"Tailwind\navigation\side-menu.css"],
+        ["Layout"] = [@"Tailwind\foundation\radzen-layout.css"],
+        ["Sidebar"] = [@"Tailwind\foundation\radzen-layout.css"],
+        ["Body"] = [@"Tailwind\foundation\radzen-layout.css"],
+        ["ThemeHost"] = [@"Tailwind\foundation\theme.css"],
         ["TagEditor"] = [@"Tailwind\forms\tag-editor.css"],
         ["Button"] = [@"Tailwind\controls\buttons.css"],
         ["CopyButton"] = [@"Tailwind\controls\buttons.css"],
@@ -339,6 +401,15 @@ public sealed partial class ComponentCatalogService
         ["Toolbar"] = "Shared BaseLib toolbar component for dense inline actions, filters, and control clusters around a working surface.",
         ["CopyButton"] = "Shared BaseLib clipboard action for copying a selected input slice or the full nearby value, with text, icon-button, and tiny inline icon variants for obvious copy affordances.",
         ["TreeView"] = "Shared BaseLib tree navigation component for hierarchical exploration and selection.",
+        ["SideMenu"] = "Primary BaseLib application navigation with typed and declarative items, responsive rail-to-top-menu behavior, collapse persistence, height-measured overflow, utility panels, and service-driven context switching.",
+        ["SideMenuItem"] = "Declarative typed item for `SideMenu`, including badges, overflow policy, children, custom panel content, payload, visibility, disabled state, and per-item selection callback.",
+        ["Layout"] = "Top-level BaseLib application frame for natural-height or viewport-owned shells with explicit overflow control.",
+        ["Sidebar"] = "Generic BaseLib application rail for arbitrary custom content; use `SideMenu` directly when the rail is primary navigation.",
+        ["Body"] = "BaseLib main-content region that makes fill-height and vertical scroll ownership explicit inside `Layout`.",
+        ["ThemeHost"] = "BaseLib semantic theme boundary that applies light or dark token values and control normalization to the full component tree.",
+        ["DataGrid"] = "Shared BaseLib typed data grid with hardened sorting, selection, rendering, and accessibility behavior.",
+        ["ContextMenu"] = "Shared BaseLib typed context menu with viewport-aware placement, keyboard interaction, and consistent selection and close behavior.",
+        ["Dialog"] = "Shared BaseLib controlled dialog surface with viewport and focus behavior; use `DialogHost` plus `DialogService` for service-driven dialogs.",
         ["EmptyState"] = "Shared BaseLib empty-state component for zero-data, no-selection, and first-run orientation surfaces.",
         ["LoadingState"] = "Shared BaseLib loading-state component for progress and transition surfaces that should feel intentional instead of blank.",
         ["Alert"] = "Shared BaseLib alert component for actionable status and inline system feedback.",
@@ -358,6 +429,16 @@ public sealed partial class ComponentCatalogService
         ["CdaChart"] = "Shared Charts wrapper for Apex-backed line, area, bar, pie, and donut charts using CanDoItAll-owned series, point, option, and palette models.",
         ["ChartsHeadAssets"] = "Shared Charts asset component that adds the ApexCharts stylesheet required by the CanDoItAll chart wrapper.",
         ["MermaidDiagram"] = "CanDoItAll Mermaid.js wrapper that renders official Mermaid diagrams with Blazor callbacks for node clicks, pan/zoom controls, and normalized syntax diagnostics."
+        ,
+        ["OverlayWindow"] = "Generic OverlayLib floating-window runtime for bounded placement, drag, resize, minimize, reset, hide, and show behavior backed by `OverlayWindowState`.",
+        ["OverlayComponentToolbox"] = "Searchable OverlayLib toolbox surface for grouped component choices, badges, selection, and collapsible sections inside a workbench tool window.",
+        ["OverlayLibHeadAssets"] = "OverlayLib host asset component that loads the shared floating-window stylesheet.",
+        ["OverlayLibBodyAssets"] = "OverlayLib host asset component that loads the plain floating-window runtime once near the end of the body.",
+        ["QrCodeView"] = "Accessible QRCode SVG renderer for a generic payload, optional caption, render options, and graceful empty or render-error state.",
+        ["QrCodeButton"] = "BaseLib page-header action that opens a dialog containing a typed generic QR payload.",
+        ["QrCodeDialogContent"] = "Dialog content for displaying a typed generic QR payload with shared copy and layout behavior.",
+        ["QrScanButton"] = "BaseLib page-header action that opens camera QR scanning with a manual decoded-text fallback and typed result callback.",
+        ["QrScanDialogContent"] = "QRCode scanner dialog content for camera or manual payload entry with classification, validation, callback, and dialog result handling."
     };
     private static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> TagsByComponent = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase)
     {
@@ -428,6 +509,21 @@ public sealed partial class ComponentCatalogService
             "layout",
             "workspace"
         ],
+        ["Layout"] = ["app-shell", "viewport", "scroll-owner", "responsive-layout"],
+        ["Body"] = ["app-shell", "main-content", "scroll-owner"],
+        ["Sidebar"] = ["app-shell", "generic-rail"],
+        ["ThemeHost"] = ["theme", "light-dark", "semantic-tokens", "app-shell"],
+        ["SideMenu"] = ["app-shell", "primary-navigation", "responsive", "collapse", "overflow", "more-menu", "mobile-menu", "persistence", "service-driven"],
+        ["SideMenuItem"] = ["primary-navigation", "declarative-item", "badge", "overflow", "panel", "payload"],
+        ["DataGrid"] = ["data-grid", "table", "sorting", "selection", "accessibility"],
+        ["ContextMenu"] = ["context-menu", "keyboard", "viewport-placement", "actions"],
+        ["Dialog"] = ["dialog", "modal", "focus", "viewport", "overlay-service"],
+        ["OverlayWindow"] = ["floating-window", "drag", "resize", "minimize", "bounded-overlay"],
+        ["OverlayComponentToolbox"] = ["component-toolbox", "search", "grouped-items", "floating-window"],
+        ["QrCodeView"] = ["qr-code", "svg", "payload", "accessibility"],
+        ["QrCodeButton"] = ["qr-code", "dialog", "page-header-action"],
+        ["QrScanButton"] = ["qr-code", "scanner", "camera", "manual-fallback", "dialog"],
+        ["QrScanDialogContent"] = ["qr-code", "scanner", "camera", "manual-fallback", "validation"],
         ["SectionCard"] =
         [
             "panel",
@@ -474,7 +570,15 @@ public sealed partial class ComponentCatalogService
     private static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> AdditionalDependenciesByComponent = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase)
     {
         ["Tabs"] = ["TabsItem"],
-        ["Steps"] = ["StepsItem"]
+        ["Steps"] = ["StepsItem"],
+        ["SideMenu"] = ["SideMenuItem", "Icon"],
+        ["QrCodeButton"] = ["PageHeaderActionButton", "DialogHost"],
+        ["QrScanButton"] = ["PageHeaderActionButton", "DialogHost"],
+        ["QrCodeDialogContent"] = ["QrCodeView", "DialogScaffold", "CopyButton"],
+        ["QrScanDialogContent"] = ["DialogScaffold", "Button"],
+        ["CanvasFloatingWindow"] = ["OverlayWindow"],
+        ["CanvasLibHeadAssets"] = ["OverlayLibHeadAssets"],
+        ["CanvasLibBodyAssets"] = ["OverlayLibBodyAssets"]
     };
     private static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> ParameterDescriptionsByComponent = new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
     {
@@ -555,6 +659,63 @@ public sealed partial class ComponentCatalogService
         ["Notification"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             ["Position"] = "Default viewport stack used for messages that do not set `NotificationMessage.Position`; prefer per-message positions when the toast belongs near a specific action region."
+        },
+        ["Layout"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["FitViewport"] = "Makes the shell consume the viewport after `ViewportOffset`; use only when the application owns vertical scrolling.",
+            ["ViewportOffset"] = "Height reserved for chrome outside this layout when `FitViewport` is enabled.",
+            ["LockOverflow"] = "Prevents shell overflow when a child `Body` or work surface is the intended scroll owner."
+        },
+        ["Body"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["FillHeight"] = "Participates in the parent full-height shell and permits an intentional inner scroll owner.",
+            ["Scrollable"] = "Enables vertical scrolling on the main content region; keep only one vertical scroll owner in the shell."
+        },
+        ["SideMenu"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["MenuId"] = "Stable application-wide identity used by SideMenuService subscriptions and default localStorage expansion persistence.",
+            ["Items"] = "Runtime primary destinations. These compose with declarative `MenuItems`; IDs must stay unique across both sources.",
+            ["MoreItems"] = "Typed destinations that always appear in the More surface alongside height-overflowed primary items.",
+            ["BottomItems"] = "Typed utility destinations such as account, settings, and help, rendered in the rail or mobile bottom region.",
+            ["MenuItems"] = "Declarative primary `SideMenuItem` slot; compose it with `Items` instead of choosing only one authoring style.",
+            ["MoreMenuItems"] = "Declarative typed More-menu item slot for secondary destinations.",
+            ["BottomMenuItems"] = "Declarative utility item slot for account, settings, or help panels.",
+            ["MoreContent"] = "Optional arbitrary BaseLib content appended below typed More items; do not put primary navigation destinations here.",
+            ["Expanded"] = "Two-way collapse state. It is remembered by default per `MenuId` unless persistence is disabled or overridden.",
+            ["AllowCollapse"] = "Shows the desktop rail collapse control while preserving the automatic small-screen top-menu behavior.",
+            ["FillHeight"] = "Lets the menu share a bounded application shell height so measured overflow can move items to More.",
+            ["PersistExpandedState"] = "Stores expansion in localStorage. Disable when the application owns persistence explicitly.",
+            ["VisibleItemCapacity"] = "Optional fixed desktop capacity. Normally omit it and let measured available height control overflow.",
+            ["ItemSelected"] = "Raised for pointer, keyboard, and externally driven selections; map item IDs or payloads to route or feature behavior here."
+        },
+        ["SideMenuItem"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Id"] = "Stable unique item identity within the menu.",
+            ["OverflowBehavior"] = "Keeps an item eligible for automatic placement, prefers it in the visible rail, or always places it under More.",
+            ["Activation"] = "Chooses normal selection or opening a child/custom panel for this destination.",
+            ["Children"] = "Typed child actions shown in the item panel; use for bounded utilities rather than a deep primary-navigation tree.",
+            ["PanelContent"] = "Optional custom BaseLib content for the item panel.",
+            ["Payload"] = "Typed application-owned context passed with the selected item; use it instead of parsing labels or magic strings."
+        },
+        ["OverlayWindow"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["WindowId"] = "Stable DOM/runtime identity for the floating window.",
+            ["State"] = "Controlled `OverlayWindowState` containing visibility, minimized state, and normalized geometry.",
+            ["ContainerSelector"] = "Selector for the real bounding host. Set it when the default canvas selectors do not describe the consumer surface.",
+            ["SafeTopSelector"] = "Selector for toolbar or safe-top chrome that the window must not cover.",
+            ["AllowResize"] = "Enables the shared resize lifecycle; keep it false only for intentionally fixed geometry.",
+            ["StateChanged"] = "Returns normalized window state after movement, resize, visibility, minimize, or reset behavior."
+        },
+        ["QrCodeView"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Payload"] = "Required generic text encoded into the QR SVG.",
+            ["Options"] = "Typed error-correction and rendering options supplied to the registered QR renderer.",
+            ["AriaLabel"] = "Accessible purpose for the rendered code; describe the action or payload context, not the visual shape."
+        },
+        ["QrScanButton"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["EnableCamera"] = "Enables the browser camera scanner while the dialog still retains its manual decoded-text fallback.",
+            ["Scanned"] = "Returns the typed, classified scan result after a valid camera or manual payload is accepted."
         },
         ["TooltipTarget"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -697,6 +858,132 @@ public sealed partial class ComponentCatalogService
             [
                 "Use `Steps` when sequence is the message. If users need to hop between peer sections, use `Tabs` instead."
             ]),
+        ["ThemeHost"] = new(
+            [
+                "The semantic visual boundary around the complete interactive application.",
+                "Light or dark mode driven by `CadThemes` and the shared CSS variable contract."
+            ],
+            [
+                "One-off theme wrappers around individual cards or pages that create inconsistent token scopes."
+            ],
+            [
+                "Wrap the root interactive layout once and keep app-owned theme overrides in an app stylesheet loaded after BaseLib output.",
+                "Use semantic tones and variables rather than hard-coded colors or generated stylesheet edits."
+            ]),
+        ["Layout"] = new(
+            [
+                "The top-level natural-height or viewport-owned application frame.",
+                "A shell that places primary navigation beside the main content region."
+            ],
+            [
+                "A local content wrapper inside a routed page.",
+                "Nested application frames that create competing viewport and overflow rules."
+            ],
+            [
+                "Pair `Layout FitViewport=true LockOverflow=true` with exactly one child scroll owner such as `Body Scrollable=true`.",
+                "Place `SideMenu` directly inside `Layout`; it already renders an aside and should not be wrapped by `Sidebar`.",
+                "Use `ViewportOffset` only for chrome that truly sits outside the layout."
+            ]),
+        ["Body"] = new(
+            [
+                "The main content region beside primary application navigation.",
+                "The deliberate scroll owner in a full-height app shell."
+            ],
+            [
+                "Dialog body content; use dialog scaffolds there instead.",
+                "A second nested scrolling region without a clearly bounded work surface."
+            ],
+            [
+                "Use `FillHeight=true Scrollable=true` for a full-height product shell whose pages scroll naturally.",
+                "Use `Scrollable=false` only when a full-height child such as a focused workbench owns overflow."
+            ]),
+        ["Sidebar"] = new(
+            [
+                "An arbitrary custom application rail with explicit height and scrolling behavior."
+            ],
+            [
+                "Wrapping `SideMenu`, which is already the semantic and visual primary navigation aside."
+            ],
+            [
+                "Use this for a bespoke supporting rail; pair it directly with `Body` inside `Layout`."
+            ]),
+        ["SideMenu"] = new(
+            [
+                "Primary application destinations that must work as a desktop rail and a small-screen top dropdown.",
+                "Context-sensitive navigation whose item set can be temporarily replaced by `SideMenuService`.",
+                "Navigation with bounded utility panels, bottom account/settings actions, and measured overflow."
+            ],
+            [
+                "Deep arbitrary hierarchy; use `TreeView` for that content navigation.",
+                "A static anchor list when callers will not handle selection and route synchronization.",
+                "Page-local mobile navigation duplicates or custom More-menu capacity calculations."
+            ],
+            [
+                "Give the menu one stable `MenuId`; use a matching `SideMenuService` scope and dispose `Subscribe` registrations.",
+                "Compose list-fed `Items` with declarative `<MenuItems>` only when all IDs are unique. Use `MoreItems` and `BottomItems` for their semantic regions.",
+                "Handle `ItemSelected` for pointer, keyboard, and external selection. Map stable IDs or typed payloads to routing; do not infer behavior from labels.",
+                "Let the component measure height for More overflow. Use `OverflowBehavior.AlwaysInMore` for secondary destinations and `PreferVisible` only for genuinely important ones.",
+                "Let the component become a top menu below the small breakpoint and validate rail, More, panels, keyboard, and resize behavior in `/groups/navigation/side-menu`."
+            ]),
+        ["SideMenuItem"] = new(
+            [
+                "A static primary, More, or bottom utility item inside `SideMenu`.",
+                "A bounded child list or BaseLib panel attached to a utility destination."
+            ],
+            [
+                "Repeating an ID used by list-fed menu items.",
+                "Representing a deeply nested content tree or a page-local arbitrary dropdown."
+            ],
+            [
+                "Keep `Text` scannable, `Icon` recognizable, and `Description` concise for mobile and panels.",
+                "Use `Payload` for typed consumer context and `OverflowBehavior` for destination priority."
+            ]),
+        ["DataGrid"] = new(
+            [
+                "Comparable records that need table columns, sorting, selection, and keyboard-accessible operation."
+            ],
+            [
+                "A single selected object with a persistent detail workspace; use `ListDetailShell`.",
+                "Label/value facts or a static report that does not need grid interaction."
+            ],
+            [
+                "Declare typed `DataGridColumn` children and keep row actions concise.",
+                "Validate keyboard navigation, selected-row behavior, sorting, and dense data at realistic viewport widths."
+            ]),
+        ["Dialog"] = new(
+            [
+                "A controlled component-owned modal or an isolated focused task."
+            ],
+            [
+                "Transient feedback that needs only `Notification`.",
+                "Permanent page navigation or long scrolling workspaces."
+            ],
+            [
+                "Use `DialogService` and one mounted `DialogHost` for service-driven flows; use controlled `IsOpen` state only when the owning component truly owns the lifecycle.",
+                "Prefer `DangerActionDialog` for destructive confirmation and `DialogScaffold` for a standard title, copy, body, and footer."
+            ]),
+        ["ContextMenu"] = new(
+            [
+                "Contextual actions attached to one item, row, node, or work surface."
+            ],
+            [
+                "Primary navigation, permanent toolbars, or long multi-step task forms."
+            ],
+            [
+                "Use shared menu primitives and callbacks; let the component handle placement, dismissal, and keyboard behavior.",
+                "Keep commands contextual and concise. Promote commonly used actions to visible page or row controls."
+            ]),
+        ["TreeView"] = new(
+            [
+                "Accessible hierarchy browsing, expansion, selection, and keyboard navigation."
+            ],
+            [
+                "Top-level product destinations that should be a `SideMenu`.",
+                "A small finite set of peer modes that tabs communicate more clearly."
+            ],
+            [
+                "Preserve semantic parent-child data and test keyboard expansion, collapse, and selection in a real browser."
+            ]),
         ["PageScaffold"] = new(
             [
                 "Full-page shells that need a stable header and a deliberate content region.",
@@ -814,6 +1101,59 @@ public sealed partial class ComponentCatalogService
             [
                 "Use `StatsGrid` when the content is truly metric-first.",
                 "If the cards become multi-purpose sections, switch back to `Grid` plus panel components."
+            ]),
+        ["OverlayWindow"] = new(
+            [
+                "Persistent floating inspectors, tool windows, and bounded workbench utilities that users may move, resize, minimize, or restore."
+            ],
+            [
+                "A short confirmation or form that should focus the user; use `Dialog`.",
+                "Generic page layout or a window without a concrete container boundary."
+            ],
+            [
+                "Load `<OverlayLibHeadAssets />` and `<OverlayLibBodyAssets />` once, then use controlled `OverlayWindowState` plus `StateChanged` to persist state.",
+                "Set `ContainerSelector` and `SafeTopSelector` for the consumer's actual host; CanvasLib already loads these assets when its generated asset components are present."
+            ]),
+        ["OverlayComponentToolbox"] = new(
+            [
+                "Searchable, grouped component choices in a workbench or overlay tool window."
+            ],
+            [
+                "Primary application navigation or an unbounded generic catalog page."
+            ],
+            [
+                "Provide typed sections, groups, and items. Keep consumer selection behavior in callbacks instead of changing the shared toolbox runtime."
+            ]),
+        ["QrCodeView"] = new(
+            [
+                "An inline generic QR payload with accessible labeling and an optional caption."
+            ],
+            [
+                "Domain-specific address, ticket, transaction, or business-object UI semantics."
+            ],
+            [
+                "Register QRCode services, pass typed rendering options when needed, and describe the payload context with `AriaLabel`."
+            ]),
+        ["QrCodeButton"] = new(
+            [
+                "A compact page-header or toolbar action that opens a generic typed QR payload in a dialog."
+            ],
+            [
+                "Inline display when the QR code must remain visible; use `QrCodeView` there."
+            ],
+            [
+                "Mount `DialogHost` once and keep the display label and payload semantics in the application."
+            ]),
+        ["QrScanButton"] = new(
+            [
+                "A standard QR-scanning action with camera support, manual fallback, typed result, and shared dialog behavior."
+            ],
+            [
+                "A scanner flow that discards manual entry or assumes a camera is available."
+            ],
+            [
+                "Handle `Scanned` and validate browser camera permission denial, unavailable camera hardware, and manual entry.",
+                "Mount `DialogHost` once and keep domain acceptance rules outside the generic QR component library."
             ])
     };
     private static readonly IReadOnlyDictionary<string, ComponentGuidanceDocument> DefaultGuidanceByLibrary = new Dictionary<string, ComponentGuidanceDocument>(StringComparer.OrdinalIgnoreCase)
@@ -865,6 +1205,29 @@ public sealed partial class ComponentCatalogService
                 "Use `AddCanDoItAllMermaid()` in hosts and render diagrams with `<MermaidDiagram Source=\"...\" />`.",
                 "Use `NodeClicked`, `Rendered`, and `Error` callbacks for interaction and diagnostics rather than DOM-specific page scripts.",
                 "Validate diagram routes in a browser because build success cannot prove Mermaid parsing, SVG output, pan/zoom, or node-click wiring."
+            ]),
+        ["OverlayLib"] = new(
+            [
+                "Generic floating tool windows and component toolboxes inside a bounded interactive surface."
+            ],
+            [
+                "Ordinary dialogs, notifications, or page shells.",
+                "Copying drag, resize, geometry normalization, or placement logic into consuming components."
+            ],
+            [
+                "Load `<OverlayLibHeadAssets />` and `<OverlayLibBodyAssets />` once unless CanvasLib generated assets already load them.",
+                "Use `OverlayWindowState` and the real container/safe-top selectors as the shared runtime boundary."
+            ]),
+        ["QRCode"] = new(
+            [
+                "Generic QR rendering, QR dialog actions, camera scanning, and manual decoded-text fallback."
+            ],
+            [
+                "Domain-specific payload policy or a scanner flow that requires a camera without a fallback."
+            ],
+            [
+                "Use `AddCanDoItAllQrCode()` after BaseLib registration and mount `DialogHost` before QR dialog actions.",
+                "Keep payload classification, acceptance, and domain language in the consumer; validate browser permission and manual fallback behavior."
             ])
     };
     private static readonly IReadOnlySet<string> ConsumerProjectExclusions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -875,6 +1238,9 @@ public sealed partial class ComponentCatalogService
         "CanDoItAll.Components.Charts",
         "CanDoItAll.Components.Common",
         "CanDoItAll.Components.Mermaid",
+        "CanDoItAll.Components.OverlayLib",
+        "CanDoItAll.Components.QRCode",
+        "CanDoItAll.Components.Sandbox",
         "CanDoItAll.Mcp.Components",
         "CanDoItAll.Mcp.Core",
         "CanDoItAll.Mcp.DotNetWatch",
