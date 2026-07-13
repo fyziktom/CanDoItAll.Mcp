@@ -32,7 +32,7 @@ public sealed class ComponentsMcpProtocolTests
                 MermaidRoot = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.Mermaid"),
                 OverlayLibRoot = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.OverlayLib"),
                 QrCodeRoot = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.QRCode"),
-                SandboxRoot = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.Sandbox")
+                SandboxRoot = Path.Combine("..", "CanDoItAll.Components", "samples", "CanDoItAll.Components.Sandbox")
             }
         }));
 

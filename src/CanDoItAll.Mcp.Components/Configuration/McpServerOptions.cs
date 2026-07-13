@@ -51,7 +51,7 @@ public sealed class CatalogOptions
     public string QrCodeRoot { get; set; } = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.QRCode");
 
     [Required]
-    public string SandboxRoot { get; set; } = Path.Combine("..", "CanDoItAll.Components", "src", "CanDoItAll.Components.Sandbox");
+    public string SandboxRoot { get; set; } = Path.Combine("..", "CanDoItAll.Components", "samples", "CanDoItAll.Components.Sandbox");
 }
 
 public sealed class McpServerOptionsValidator : IValidateOptions<McpServerOptions>
