@@ -11,7 +11,7 @@ namespace CanDoItAll.Mcp.CodeAnalytics;
 public sealed class CodeAnalyticsTools(ICodeAnalyticsCoordinator coordinator, ILogger<CodeAnalyticsTools> logger)
 {
     [McpServerTool(Name = "code_analytics_snapshot_build", ReadOnly = false, Idempotent = false, OpenWorld = false, UseStructuredContent = true)]
-    [Description("Builds or refreshes an architectural snapshot for a C# solution or project using the sibling CanDoItAll.CodeAnalsis libraries. For large solutions, scope by project, namespace, or project path unless the task is architecture-wide.")]
+    [Description("Builds or refreshes an architectural snapshot for a C# solution or project using the sibling CanDoItAll.CodeAnalysis libraries. For large solutions, scope by project, namespace, or project path unless the task is architecture-wide.")]
     public Task<McpToolEnvelope<SnapshotBuildResponse>> CodeAnalyticsSnapshotBuildAsync(CodeAnalyticsBuildSnapshotInput? request = null, CancellationToken cancellationToken = default)
     {
         return ExecuteAsync("code_analytics_snapshot_build", () => coordinator.BuildSnapshotAsync(request ?? new CodeAnalyticsBuildSnapshotInput(), cancellationToken));

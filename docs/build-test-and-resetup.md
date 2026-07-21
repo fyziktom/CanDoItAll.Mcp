@@ -4,7 +4,7 @@
 
 - .NET 10 SDK.
 - The sibling `CanDoItAll` repository when running resetup or integration tests.
-- The sibling `CanDoItAll.CodeAnalsis` repository for the CodeAnalytics MCP project references.
+- The sibling `CanDoItAll.CodeAnalysis` repository for the CodeAnalytics MCP project references.
 - Component packages available through `..\CanDoItAll\ExternalPackages`, as configured in `NuGet.config`.
 
 ## Build

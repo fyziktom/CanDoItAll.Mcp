@@ -19,13 +19,13 @@ dotnet build src/CanDoItAll.Mcp.CodeAnalytics/CanDoItAll.Mcp.CodeAnalytics.cspro
 Project references:
 
 - `../CanDoItAll.Mcp.Core/CanDoItAll.Mcp.Core.csproj`
-- `../../../CanDoItAll.CodeAnalsis/src/CanDoItAll.CodeAnalytics.Abstractions/CanDoItAll.CodeAnalytics.Abstractions.csproj`
-- `../../../CanDoItAll.CodeAnalsis/src/CanDoItAll.CodeAnalytics.Analysis/CanDoItAll.CodeAnalytics.Analysis.csproj`
-- `../../../CanDoItAll.CodeAnalsis/src/CanDoItAll.CodeAnalytics.Application/CanDoItAll.CodeAnalytics.Application.csproj`
-- `../../../CanDoItAll.CodeAnalsis/src/CanDoItAll.CodeAnalytics.Facts/CanDoItAll.CodeAnalytics.Facts.csproj`
-- `../../../CanDoItAll.CodeAnalsis/src/CanDoItAll.CodeAnalytics.Rendering/CanDoItAll.CodeAnalytics.Rendering.csproj`
-- `../../../CanDoItAll.CodeAnalsis/src/CanDoItAll.CodeAnalytics.Storage/CanDoItAll.CodeAnalytics.Storage.csproj`
-- `../../../CanDoItAll.CodeAnalsis/src/CanDoItAll.CodeAnalytics.Workspace/CanDoItAll.CodeAnalytics.Workspace.csproj`
+- `../../../CanDoItAll.CodeAnalysis/src/CanDoItAll.CodeAnalytics.Abstractions/CanDoItAll.CodeAnalytics.Abstractions.csproj`
+- `../../../CanDoItAll.CodeAnalysis/src/CanDoItAll.CodeAnalytics.Analysis/CanDoItAll.CodeAnalytics.Analysis.csproj`
+- `../../../CanDoItAll.CodeAnalysis/src/CanDoItAll.CodeAnalytics.Application/CanDoItAll.CodeAnalytics.Application.csproj`
+- `../../../CanDoItAll.CodeAnalysis/src/CanDoItAll.CodeAnalytics.Facts/CanDoItAll.CodeAnalytics.Facts.csproj`
+- `../../../CanDoItAll.CodeAnalysis/src/CanDoItAll.CodeAnalytics.Rendering/CanDoItAll.CodeAnalytics.Rendering.csproj`
+- `../../../CanDoItAll.CodeAnalysis/src/CanDoItAll.CodeAnalytics.Storage/CanDoItAll.CodeAnalytics.Storage.csproj`
+- `../../../CanDoItAll.CodeAnalysis/src/CanDoItAll.CodeAnalytics.Workspace/CanDoItAll.CodeAnalytics.Workspace.csproj`
 
 Framework references:
 
