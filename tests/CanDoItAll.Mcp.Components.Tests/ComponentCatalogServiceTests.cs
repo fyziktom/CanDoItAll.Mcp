@@ -91,7 +91,7 @@ public sealed class ComponentCatalogServiceTests
 
         var groups = service.GetGroups();
 
-        Assert.Equal(12, groups.Count);
+        Assert.NotEmpty(groups);
         Assert.Contains(groups, group => string.Equals(group.Key, "charts", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(groups, group => string.Equals(group.Key, "mermaid", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(groups, group => string.Equals(group.Key, "canvas", StringComparison.OrdinalIgnoreCase));

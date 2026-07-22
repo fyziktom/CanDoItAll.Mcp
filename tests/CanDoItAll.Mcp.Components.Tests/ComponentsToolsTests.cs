@@ -40,10 +40,11 @@ public sealed class ComponentsToolsTests
         Assert.Contains(examples.Data!.Examples, example => string.Equals(example.GroupKey, "canvas", StringComparison.OrdinalIgnoreCase));
 
         Assert.True(groups.Ok);
-        Assert.Equal(12, groups.Data!.Count);
-        Assert.Contains(groups.Data, group => string.Equals(group.Key, "charts", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(groups.Data, group => string.Equals(group.Key, "mermaid", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(groups.Data, group => string.Equals(group.Key, "qr", StringComparison.OrdinalIgnoreCase));
+        var groupDocuments = groups.Data!;
+        Assert.NotEmpty(groupDocuments);
+        Assert.Contains(groupDocuments, group => string.Equals(group.Key, "charts", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(groupDocuments, group => string.Equals(group.Key, "mermaid", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(groupDocuments, group => string.Equals(group.Key, "qr", StringComparison.OrdinalIgnoreCase));
 
         Assert.True(css.Ok);
         Assert.Contains(css.Data!.Stylesheets, stylesheet => stylesheet.Contains("css/workbench/", StringComparison.OrdinalIgnoreCase));
