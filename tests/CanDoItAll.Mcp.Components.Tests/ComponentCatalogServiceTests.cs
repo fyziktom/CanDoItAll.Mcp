@@ -238,6 +238,114 @@ public sealed class ComponentCatalogServiceTests
     }
 
     [Fact]
+    public void Component_Get_Explains_Compact_Page_Form_Dialog_And_Card_Semantics()
+    {
+        var service = CreateService();
+
+        var pageHeader = service.GetComponent("PageHeader");
+        var textArea = service.GetComponent("TextArea");
+        var dialog = service.GetComponent("Dialog");
+        var card = service.GetComponent("Card");
+        var selectionListItem = service.GetComponent("SelectionListItem");
+
+        var compactParameter = Assert.Single(pageHeader.Parameters, parameter => string.Equals(parameter.Name, "Compact", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains("operational-page", compactParameter.Summary ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(pageHeader.Guidance.CompositionRules, rule => rule.Contains("CompactStatStrip", StringComparison.OrdinalIgnoreCase));
+
+        var rowsParameter = Assert.Single(textArea.Parameters, parameter => string.Equals(parameter.Name, "Rows", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains("override", rowsParameter.Summary ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(textArea.Guidance.CompositionRules, rule => rule.Contains("TextAreaSize.Compact", StringComparison.OrdinalIgnoreCase));
+
+        var sizeParameter = Assert.Single(dialog.Parameters, parameter => string.Equals(parameter.Name, "Size", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains("single-column", sizeParameter.Summary ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(dialog.Guidance.CompositionRules, rule => rule.Contains("ModalSize.Compact", StringComparison.OrdinalIgnoreCase));
+
+        Assert.Contains(card.Guidance.CompositionRules, rule => rule.Contains("Media", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(card.Guidance.CompositionRules, rule => rule.Contains("Actions", StringComparison.OrdinalIgnoreCase));
+
+        var onSelectEvent = Assert.Single(selectionListItem.Events, @event => string.Equals(@event.Name, "OnSelect", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains("noninteractive surface", onSelectEvent.Summary ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(selectionListItem.Guidance.CompositionRules, rule => rule.Contains("renders as a selection button", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(selectionListItem.Guidance.CompositionRules, rule => rule.Contains("does not disable", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(selectionListItem.Guidance.CompositionRules, rule => rule.Contains("consumer-owned", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void Compound_Form_Controls_Require_Container_Width_Wrapping_And_Narrow_Column_Proof()
+    {
+        var service = CreateService();
+
+        var secretField = service.GetComponent("SecretField");
+        var recommendation = service.RecommendComponents("three-column form with compound secret fields");
+
+        Assert.Contains(secretField.CssNotes, note => note.Contains("containing width", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(secretField.Guidance.CompositionRules, rule => rule.Contains("not only viewport", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(secretField.Guidance.CompositionRules, rule => rule.Contains("300–320px", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(secretField.Guidance.CompositionRules, rule => rule.Contains("horizontal overflow", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(recommendation.CompositionPlan, step => step.Contains("actual containing width", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(recommendation.CompositionPlan, step => step.Contains("300–320px", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void Usage_Examples_Prioritize_Curated_Sandbox_And_Capture_Multiline_Opening_Tag()
+    {
+        var workspaceRoot = Path.Combine(Path.GetTempPath(), $"candoitall-components-usage-{Guid.NewGuid():N}");
+        var productRoot = Path.Combine(workspaceRoot, "src", "CanDoItAll.Web");
+        var sandboxRoot = Path.Combine(workspaceRoot, "sandbox");
+        Directory.CreateDirectory(productRoot);
+        Directory.CreateDirectory(sandboxRoot);
+
+        File.WriteAllText(
+            Path.Combine(productRoot, "ProductPage.razor"),
+            "<TextArea Rows=\"2\" />");
+        File.WriteAllText(
+            Path.Combine(sandboxRoot, "CompactTextAreaProof.razor"),
+            """
+            @page "/proof/compact-textarea"
+
+            <TextArea Value="@notes"
+                      ValueChanged="HandleNotesChanged"
+                      Size="TextAreaSize.Extended" />
+            """);
+
+        try
+        {
+            var service = new ComponentCatalogService(Options.Create(new McpServerOptions
+            {
+                Server = new ServerOptions
+                {
+                    WorkspaceRoot = workspaceRoot
+                },
+                Catalog = new CatalogOptions
+                {
+                    CommonRoot = "missing/common",
+                    BaseLibRoot = "missing/base",
+                    CanvasLibRoot = "missing/canvas",
+                    ChartsRoot = "missing/charts",
+                    MermaidRoot = "missing/mermaid",
+                    OverlayLibRoot = "missing/overlay",
+                    QrCodeRoot = "missing/qr",
+                    SandboxRoot = Path.GetRelativePath(workspaceRoot, sandboxRoot)
+                }
+            }));
+
+            var usage = service.GetUsageExamples("TextArea", limit: 10);
+            var first = Assert.IsType<ComponentUsageExampleDocument>(usage.UsageExamples[0]);
+
+            Assert.Equal("sandbox", first.SourceKind);
+            Assert.Equal("/proof/compact-textarea", first.Route);
+            Assert.StartsWith("<TextArea", first.Snippet, StringComparison.Ordinal);
+            Assert.Contains("ValueChanged=", first.Snippet, StringComparison.Ordinal);
+            Assert.Contains("Size=\"TextAreaSize.Extended\"", first.Snippet, StringComparison.Ordinal);
+            Assert.EndsWith("/>", first.Snippet, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(workspaceRoot, recursive: true);
+        }
+    }
+
+    [Fact]
     public void Catalog_Includes_Overlay_And_QrCode_Without_WebGl()
     {
         var service = CreateService();
@@ -302,6 +410,32 @@ public sealed class ComponentCatalogServiceTests
 
         Assert.Contains(recommendation.Recommendations, component => string.Equals(component.Name, expectedComponent, StringComparison.OrdinalIgnoreCase));
         Assert.NotEmpty(recommendation.FollowUpTools);
+    }
+
+    [Fact]
+    public void Compact_Recommendations_Return_Retained_Component_Rules_And_Task_First_Plans()
+    {
+        var service = CreateService();
+
+        var compactPage = service.RecommendComponents("compact operational page with supporting metrics above an item list");
+        var itemCrud = service.RecommendComponents("CRUD item list with create and edit dialog");
+        var visualCards = service.RecommendComponents("visual card collection with media tags and item actions");
+        var defaultBaseLib = service.RecommendComponents("button", library: "BaseLib");
+
+        var pageHeader = Assert.Single(compactPage.Recommendations, component => string.Equals(component.Name, "PageHeader", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(pageHeader.CompositionRules, rule => rule.Contains("CompactStatStrip", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(compactPage.MatchedDecisionGuides, guide => guide.Contains("Compact task-first", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(compactPage.CompositionPlan, step => step.Contains("primary task", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(compactPage.Recommendations, component => string.Equals(component.Name, "CompactStatStrip", StringComparison.OrdinalIgnoreCase));
+
+        var dialog = Assert.Single(itemCrud.Recommendations, component => string.Equals(component.Name, "Dialog", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(dialog.CompositionRules, rule => rule.Contains("ModalSize.Compact", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(itemCrud.CompositionPlan, step => step.Contains("load dialog-only data", StringComparison.OrdinalIgnoreCase));
+
+        var card = Assert.Single(visualCards.Recommendations, component => string.Equals(component.Name, "Card", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(card.CompositionRules, rule => rule.Contains("Actions", StringComparison.OrdinalIgnoreCase));
+
+        Assert.NotEmpty(defaultBaseLib.CompositionPlan);
     }
 
     [Fact]

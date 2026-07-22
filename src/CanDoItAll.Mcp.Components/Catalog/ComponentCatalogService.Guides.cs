@@ -168,6 +168,67 @@ public sealed partial class ComponentCatalogService
             ],
             ["Start with `Stack`; move to `Grid` or `Row` plus `Column` only when tracks or breakpoint changes are required."]),
         new(
+            "compact-operational-page",
+            "Compact task-first operational page",
+            ["compact ui", "compact page", "dense page", "reduce spacing", "reduce padding", "above the fold", "avoid scrolling", "operational page", "task first"],
+            [
+                new("PageScaffold", "Page boundary", "Keeps the page width, header, lead, rail, and work surface deliberate without adding wrapper stacks."),
+                new("PageHeader", "Compact orientation", "Keeps title, context, supporting stats, and actions in one compact header row."),
+                new("Toolbar", "Working controls", "Places filters and frequent commands beside the surface they affect."),
+                new("CompactStatStrip", "Supporting metrics", "Shows short numeric context inline without spending a card-sized region per value."),
+                new("Tabs", "Progressive disclosure", "Keeps mutually exclusive modes out of the permanent vertical flow.")
+            ],
+            [
+                new("SummaryTiles", "Metric-first summary", "Use when metrics are important enough to lead and the page has room for card-sized summaries."),
+                new("StatsGrid", "Metric-first dashboard", "Use when comparing metrics is the main job rather than supporting context.")
+            ],
+            [
+                "Start with the primary task surface, then add only the orientation, controls, and supporting context needed to operate it.",
+                "Use `PageHeader Compact=\"true\"`, `LayoutGap.Small` or `LayoutGap.Medium`, and `CompactStatStrip` for supporting numbers; do not repeat page purpose in a second hero card.",
+                "Move bounded create/edit flows into a correctly sized `Dialog` and mutually exclusive supporting views into `Tabs`; keep information required for the current decision visible.",
+                "Validate useful content at the target viewport. Compact means eliminating wasted space, not shrinking controls below accessible hit targets or forcing every region to minimum size."
+            ]),
+        new(
+            "item-crud-dialog",
+            "Item collection with create and edit dialogs",
+            ["crud", "create edit", "add item", "edit item", "manage items", "item list", "record list", "collection editor", "list editor"],
+            [
+                new("ListPanelHeader", "Collection orientation", "Keeps the collection title, count, filters, and create action attached to the list."),
+                new("SelectionListItem", "Dense item row", "Uses a compact content row when text and status matter more than media; `OnSelect` makes only its content region selectable while actions remain independent."),
+                new("Dialog", "Focused create or edit task", "Moves bounded editing out of the permanent page flow and permits dialog-only data to load on open."),
+                new("DialogScaffold", "Dialog composition", "Keeps dialog title, body, validation, and actions aligned across create and edit flows.")
+            ],
+            [
+                new("CardGrid", "Visual collection", "Use when media or independent per-item actions materially improve recognition."),
+                new("DataGrid", "Comparable records", "Use when sorting and comparing stable columns is the primary workflow."),
+                new("ListDetailShell", "Persistent detail", "Use when users repeatedly move among records while keeping one detail workspace open.")
+            ],
+            [
+                "Make the collection the primary page surface. Put create and edit forms in dialogs unless simultaneous comparison with the list is required.",
+                "Choose `ModalSize.Compact` for a short single-column form, `Medium` for ordinary grouped forms, `Wide` for genuinely multi-column review, and `Full` only for workbench-like tasks.",
+                "Use `DenseChrome=\"true\"` for short focused dialogs, keep one primary footer action, and load dialog-only data when opening rather than front-loading the page.",
+                "Use tabs or a list-detail shell instead of dialogs when users must compare modes or preserve a detail context while changing selection."
+            ]),
+        new(
+            "visual-card-collection",
+            "Visual item cards with consistent anatomy",
+            ["card collection", "card list", "visual cards", "item cards", "image cards", "media cards", "card actions", "card tags"],
+            [
+                new("CardGrid", "Collection layout", "Provides a consistent responsive grid for peer visual items."),
+                new("Card", "Item surface", "Provides semantic media, header, tag, content, and action regions with stable alignment."),
+                new("StatusBadge", "Item status", "Communicates a short state without adding another content block."),
+                new("Button", "Item action", "Uses shared size and emphasis for the small action set at the card edge.")
+            ],
+            [
+                new("SelectionListItem", "Dense text collection", "Use when scan speed and metadata matter more than imagery; rows may be passive content or selection-capable."),
+                new("DataGrid", "Comparable dataset", "Use when rows need column comparison, sorting, or bulk operation.")
+            ],
+            [
+                "Compose `Card` with `Media`, `Header`, `Tags`, body content, and `Actions` slots so peer cards keep the same visual rhythm.",
+                "Use a centered, constrained media region, keep tags adjacent to identity or state, and place the small action set consistently at the card footer.",
+                "Do not nest decorative cards or stretch sparse content to arbitrary equal heights. Switch to a list or grid when the content is primarily textual or tabular."
+            ]),
+        new(
             "forms",
             "Forms and data entry",
             ["form", "data entry", "settings fields", "edit fields", "validation", "input fields"],
@@ -175,13 +236,18 @@ public sealed partial class ComponentCatalogService
                 new("FormStack", "Form flow", "Owns the vertical rhythm for a form."),
                 new("FormSection", "Form grouping", "Groups related fields under a clear section boundary."),
                 new("FormRow", "Field pairing", "Handles common paired or evenly split field layouts."),
-                new("FormField", "Field semantics", "Keeps labels, help, validation, and control alignment together.")
+                new("FormField", "Field semantics", "Keeps labels, help, validation, and control alignment together."),
+                new("TextArea", "Multiline entry", "Sizes multiline input from expected content instead of imposing one large minimum height on every form.")
             ],
             [
                 new("Fieldset", "Semantic group", "Use for a related set of controls with one legend."),
                 new("InlineActions", "Form actions", "Use for compact actions adjacent to fields.")
             ],
-            ["Compose shared inputs inside `FormField`; avoid raw label/input wrappers when BaseLib already supplies the behavior."]),
+            [
+                "Compose shared inputs inside `FormField`; avoid raw label/input wrappers when BaseLib already supplies the behavior.",
+                "Use `TextAreaSize.Compact` for short comments, `Standard` for ordinary descriptions, and `Extended` for substantial prose. Set `Rows` only for a deliberate content-specific override.",
+                "Compound fields such as `SecretField` must wrap from their actual containing width, not only viewport breakpoints. Prove the wrapped state inside a realistic narrow desktop grid column of roughly 300–320px."
+            ]),
         new(
             "data-grid",
             "Tabular data with sorting and selection",
@@ -202,7 +268,7 @@ public sealed partial class ComponentCatalogService
             [
                 new("ListDetailShell", "Workspace shell", "Keeps the list stable while the selected record changes in a focused detail pane."),
                 new("ListPanelHeader", "List orientation", "Provides count, title, and actions for the selection region."),
-                new("SelectionListItem", "Selectable row", "Expresses selected, disabled, and summary states consistently.")
+                new("SelectionListItem", "Selection-capable row", "Expresses passive content, selected, disabled-selection, action, and summary states consistently.")
             ],
             [new("Tabs", "Detail segmentation", "Place tabs inside a dense detail pane when its modes would otherwise become a long scroll.")],
             ["Keep selection state in the list shell; segment only the detail pane when it becomes mode-heavy."]),
@@ -249,16 +315,24 @@ public sealed partial class ComponentCatalogService
             ["Choose by persistence and required action: tooltip < notification < alert < dialog."]),
         new(
             "metrics",
-            "Cards, summaries, and metrics",
-            ["metrics", "kpi", "stats", "summary tiles", "dashboard cards"],
+            "Supporting metrics versus a metric-first dashboard",
+            ["metrics", "kpi", "stats", "stat cards", "summary tiles", "dashboard cards", "supporting metrics", "numbers"],
             [
+                new("CompactStatStrip", "Supporting metric row", "Keeps short contextual numbers inline when another surface is the page's primary task."),
+                new("CompactStat", "Supporting metric", "Presents one short label/value pair without card chrome."),
                 new("StatsGrid", "Metric layout", "Provides a consistent metric-first responsive grid."),
-                new("SummaryTiles", "Compact summaries", "Groups high-signal summary tiles."),
-                new("MetricCard", "Single metric", "Presents one metric with shared hierarchy."),
-                new("SectionCard", "Mixed content section", "Use when the region contains more than a metric.")
+                new("MetricCard", "Primary metric", "Presents one high-value metric with shared hierarchy when the metric deserves card-sized emphasis.")
             ],
-            [new("Grid", "Mixed dashboard", "Use when cards have different purposes and need explicit responsive tracks.")],
-            ["Keep metric cards comparable; move mixed-purpose content to `Grid` plus semantic card components."]),
+            [
+                new("SummaryTiles", "Sparse metric-first summary", "Use when metrics lead a page with enough available space for larger summaries."),
+                new("Badge", "Inline count or state", "Use for one short number or status attached to a heading, tab, or action."),
+                new("Grid", "Mixed dashboard", "Use when regions have different purposes and need explicit responsive tracks.")
+            ],
+            [
+                "First decide whether metrics are the job or context for the job. Use `CompactStatStrip` or a badge for supporting context; reserve `StatsGrid`, `MetricCard`, and `SummaryTiles` for metric-first pages.",
+                "Keep metric cards comparable and avoid repeating the same number in header stats, tiles, and body cards.",
+                "Let sparse metric-first pages use available space, but do not make card-sized summaries displace a list, form, or work surface that users came to operate."
+            ]),
         new(
             "charts",
             "Operational charts",
@@ -298,9 +372,19 @@ public sealed partial class ComponentCatalogService
             "page-header",
             "Page orientation and action chrome",
             ["page header", "header actions", "toolbar", "filter bar", "page title actions"],
-            [new("PageHeader", "Page orientation", "Combines eyebrow, title, description, stats, and action slots."), new("PageHeaderActionButton", "Header command", "Keeps compact header actions consistent and tooltip-ready."), new("Toolbar", "Working controls", "Groups dense filters and actions around a working surface.")],
+            [new("PageHeader", "Page orientation", "Combines eyebrow, title, description, supporting stats, and action slots without a duplicate hero."), new("PageHeaderActionButton", "Header command", "Keeps compact header actions consistent and tooltip-ready."), new("Toolbar", "Working controls", "Groups dense filters and actions around a working surface.")],
             [new("FilterBar", "Filter controls", "Use when the header-adjacent region is primarily query and filter state.")],
-            ["Put page orientation in the `PageScaffold.Header` slot; keep working controls close to the surface they affect."])
+            [
+                "Put page orientation in the `PageScaffold.Header` slot; keep working controls close to the surface they affect.",
+                "Default to `Compact=\"true\"` on operational pages. Keep a concise description when it prevents ambiguity, and use the `Stats` slot only for supporting context that belongs beside the title."
+            ])
+    ];
+
+    private static readonly IReadOnlyList<string> DefaultBaseLibCompositionPlan =
+    [
+        "Make the primary task surface the largest and earliest region; keep page orientation and frequent actions compact and adjacent to it.",
+        "Use shared `PageScaffold`, `PageHeader`, layout gaps, form sizes, card slots, tabs, and dialogs before adding page-local structural spacing.",
+        "Choose disclosure and density from content and workflow: keep decision-critical context visible, and move bounded or mutually exclusive work out of the permanent vertical flow."
     ];
 
     public IReadOnlyList<ComponentLibraryDocument> GetLibraries()
@@ -515,6 +599,13 @@ public sealed partial class ComponentCatalogService
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
+        if (compositionPlan.Length == 0 &&
+            (string.Equals(normalizedLibrary, "BaseLib", StringComparison.OrdinalIgnoreCase) ||
+             selectedRecommendations.Any(item => string.Equals(item.Library, "BaseLib", StringComparison.OrdinalIgnoreCase))))
+        {
+            compositionPlan = DefaultBaseLibCompositionPlan.ToArray();
+        }
+
         var followUpTools = selectedRecommendations
             .Take(4)
             .SelectMany(component => new[]
@@ -586,6 +677,7 @@ public sealed partial class ComponentCatalogService
             why,
             component.Guidance.UseFor,
             component.Guidance.AvoidFor,
+            component.Guidance.CompositionRules,
             component.DependencyNames,
             score);
 
@@ -687,14 +779,15 @@ public sealed partial class ComponentCatalogService
             <Header>
                 <PageHeader Eyebrow="Workspace"
                             Title="Page title"
-                            Description="State the purpose and current context.">
+                            Description="State the purpose and current context."
+                            Compact="true">
                     <Actions>
                         <PageHeaderActionButton Icon="add" Label="Create" Click="CreateAsync" />
                     </Actions>
                 </PageHeader>
             </Header>
 
-            <Grid Columns="1" ColumnsLg="2" Gap="LayoutGap.Large">
+            <Grid Columns="1" ColumnsLg="2" Gap="LayoutGap.Medium">
                 <SectionCard Title="Primary work">...</SectionCard>
                 <SectionCard Title="Supporting context">...</SectionCard>
             </Grid>

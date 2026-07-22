@@ -65,18 +65,28 @@ public sealed class ComponentsMcpProtocolTests
             var recommendation = await client.CallToolAsync(
                 "components_recommend",
                 new Dictionary<string, object?> { ["useCase"] = "scan a QR code with camera fallback" });
+            var compactRecommendation = await client.CallToolAsync(
+                "components_recommend",
+                new Dictionary<string, object?> { ["useCase"] = "compact operational page with supporting metrics above an item list" });
 
             Assert.False(appShell.IsError is true);
             Assert.False(recommendation.IsError is true);
+            Assert.False(compactRecommendation.IsError is true);
             var appShellOutput = appShell.StructuredContent is JsonElement appShellStructuredContent
                 ? appShellStructuredContent.GetRawText()
                 : JsonSerializer.Serialize(appShell.Content);
             var recommendationOutput = recommendation.StructuredContent is JsonElement recommendationStructuredContent
                 ? recommendationStructuredContent.GetRawText()
                 : JsonSerializer.Serialize(recommendation.Content);
+            var compactRecommendationOutput = compactRecommendation.StructuredContent is JsonElement compactRecommendationStructuredContent
+                ? compactRecommendationStructuredContent.GetRawText()
+                : JsonSerializer.Serialize(compactRecommendation.Content);
 
             Assert.Contains("SideMenu", appShellOutput, StringComparison.Ordinal);
             Assert.Contains("QrScanButton", recommendationOutput, StringComparison.Ordinal);
+            Assert.Contains("CompactStatStrip", compactRecommendationOutput, StringComparison.Ordinal);
+            Assert.Contains("compositionRules", compactRecommendationOutput, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("primary task", compactRecommendationOutput, StringComparison.OrdinalIgnoreCase);
         }
         finally
         {
