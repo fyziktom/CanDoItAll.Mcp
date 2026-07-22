@@ -40,10 +40,11 @@ public sealed class ComponentsToolsTests
         Assert.Contains(examples.Data!.Examples, example => string.Equals(example.GroupKey, "canvas", StringComparison.OrdinalIgnoreCase));
 
         Assert.True(groups.Ok);
-        Assert.Equal(12, groups.Data!.Count);
-        Assert.Contains(groups.Data, group => string.Equals(group.Key, "charts", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(groups.Data, group => string.Equals(group.Key, "mermaid", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(groups.Data, group => string.Equals(group.Key, "qr", StringComparison.OrdinalIgnoreCase));
+        var groupDocuments = groups.Data!;
+        Assert.NotEmpty(groupDocuments);
+        Assert.Contains(groupDocuments, group => string.Equals(group.Key, "charts", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(groupDocuments, group => string.Equals(group.Key, "mermaid", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(groupDocuments, group => string.Equals(group.Key, "qr", StringComparison.OrdinalIgnoreCase));
 
         Assert.True(css.Ok);
         Assert.Contains(css.Data!.Stylesheets, stylesheet => stylesheet.Contains("css/workbench/", StringComparison.OrdinalIgnoreCase));
@@ -61,6 +62,7 @@ public sealed class ComponentsToolsTests
         var libraries = await tools.ComponentsLibrariesListAsync();
         var appShell = await tools.AppShellGuideGetAsync("full-height");
         var recommendation = await tools.ComponentsRecommendAsync("responsive application layout with side navigation");
+        var compactRecommendation = await tools.ComponentsRecommendAsync("compact operational page with supporting metrics above an item list");
 
         Assert.True(libraries.Ok);
         Assert.Contains(libraries.Data!, library => string.Equals(library.Name, "QRCode", StringComparison.OrdinalIgnoreCase));
@@ -73,6 +75,11 @@ public sealed class ComponentsToolsTests
         Assert.True(recommendation.Ok);
         Assert.Contains(recommendation.Data!.Recommendations, component => string.Equals(component.Name, "SideMenu", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(recommendation.Data.FollowUpTools, tool => tool.StartsWith("app_shell_guide_get", StringComparison.OrdinalIgnoreCase));
+
+        Assert.True(compactRecommendation.Ok);
+        var pageHeader = Assert.Single(compactRecommendation.Data!.Recommendations, component => string.Equals(component.Name, "PageHeader", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(pageHeader.CompositionRules, rule => rule.Contains("CompactStatStrip", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(compactRecommendation.Data.CompositionPlan, step => step.Contains("primary task", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

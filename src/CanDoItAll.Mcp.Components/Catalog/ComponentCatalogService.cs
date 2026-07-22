@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Globalization;
 using CanDoItAll.Components.BaseLib;
@@ -18,6 +19,8 @@ namespace CanDoItAll.Mcp.Components.Catalog;
 public sealed partial class ComponentCatalogService
 {
     private const string ComponentsRepositoryRelativeRoot = @"..\CanDoItAll.Components";
+    private const int MaximumUsageOpeningTagLines = 8;
+    private const int MaximumUsageSnippetLength = 640;
 
     private readonly Lazy<ComponentCatalogIndex> index;
     private readonly McpServerOptions options;
@@ -400,14 +403,17 @@ public sealed partial class ComponentCatalogService
                 property.GetCustomAttribute<EditorRequiredAttribute>() is not null,
                 property.GetCustomAttribute<CascadingParameterAttribute>() is not null,
                 IsChildContent(property.PropertyType),
-                BuildParameterSummary(componentName, property.Name),
+                BuildMemberSummary(componentName, property.Name),
                 ResolveDefaultValue(property, defaultInstance),
                 ResolveAllowedValues(property.PropertyType)))
             .ToArray();
 
         var events = parameterProperties
             .Where(property => IsEventCallback(property.PropertyType))
-            .Select(property => new ComponentEventDocument(property.Name, FormatTypeName(property.PropertyType)))
+            .Select(property => new ComponentEventDocument(
+                property.Name,
+                FormatTypeName(property.PropertyType),
+                BuildMemberSummary(componentName, property.Name)))
             .ToArray();
 
         return (parameters, events);
@@ -638,7 +644,7 @@ public sealed partial class ComponentCatalogService
                             consumerRoot.ProjectName,
                             filePath,
                             lineIndex + 1,
-                            TruncateSnippet(line.Trim()),
+                            CaptureOpeningTag(lines, lineIndex, match.Index),
                             route));
                     }
                 }
@@ -976,9 +982,9 @@ public sealed partial class ComponentCatalogService
     {
         return sourceKind switch
         {
-            "product" => 0,
-            "module" => 1,
-            "sandbox" => 2,
+            "sandbox" => 0,
+            "product" => 1,
+            "module" => 2,
             "shared" => 3,
             _ => 4
         };
@@ -1140,15 +1146,15 @@ public sealed partial class ComponentCatalogService
     private static string ComponentRepositoryPath(string relativePath)
         => Path.Combine(ComponentsRepositoryRelativeRoot, relativePath);
 
-    private static string? BuildParameterSummary(string componentName, string parameterName)
+    private static string? BuildMemberSummary(string componentName, string memberName)
     {
-        if (ParameterDescriptionsByComponent.TryGetValue(componentName, out var componentDescriptions) &&
-            componentDescriptions.TryGetValue(parameterName, out var parameterSummary))
+        if (MemberDescriptionsByComponent.TryGetValue(componentName, out var componentDescriptions) &&
+            componentDescriptions.TryGetValue(memberName, out var memberSummary))
         {
-            return parameterSummary;
+            return memberSummary;
         }
 
-        return DefaultParameterDescriptionsByName.TryGetValue(parameterName, out var defaultSummary)
+        return DefaultParameterDescriptionsByName.TryGetValue(memberName, out var defaultSummary)
             ? defaultSummary
             : null;
     }
@@ -1237,11 +1243,66 @@ public sealed partial class ComponentCatalogService
             .ToArray();
     }
 
-    private static string TruncateSnippet(string snippet)
+    private static string CaptureOpeningTag(IReadOnlyList<string> lines, int startLineIndex, int startColumnIndex)
     {
-        return snippet.Length <= 220
+        var builder = new StringBuilder();
+        var inSingleQuotedValue = false;
+        var inDoubleQuotedValue = false;
+        var completed = false;
+        var endLineExclusive = Math.Min(lines.Count, startLineIndex + MaximumUsageOpeningTagLines);
+
+        for (var lineIndex = startLineIndex; lineIndex < endLineExclusive && builder.Length < MaximumUsageSnippetLength; lineIndex++)
+        {
+            var line = lines[lineIndex];
+            var startColumn = lineIndex == startLineIndex
+                ? Math.Clamp(startColumnIndex, 0, line.Length)
+                : 0;
+
+            if (builder.Length > 0)
+            {
+                builder.Append(' ');
+            }
+
+            for (var columnIndex = startColumn; columnIndex < line.Length && builder.Length < MaximumUsageSnippetLength; columnIndex++)
+            {
+                var character = line[columnIndex];
+                var escaped = columnIndex > 0 && line[columnIndex - 1] == '\\';
+
+                if (!escaped && character == '\'' && !inDoubleQuotedValue)
+                {
+                    inSingleQuotedValue = !inSingleQuotedValue;
+                }
+                else if (!escaped && character == '"' && !inSingleQuotedValue)
+                {
+                    inDoubleQuotedValue = !inDoubleQuotedValue;
+                }
+
+                builder.Append(character);
+
+                if (character == '>' && !inSingleQuotedValue && !inDoubleQuotedValue)
+                {
+                    completed = true;
+                    break;
+                }
+            }
+
+            if (completed)
+            {
+                break;
+            }
+        }
+
+        var snippet = Regex.Replace(builder.ToString(), @"\s+", " ").Trim();
+        if (completed && snippet.Length <= MaximumUsageSnippetLength)
+        {
+            return snippet;
+        }
+
+        var boundedSnippet = snippet.Length <= MaximumUsageSnippetLength - 3
             ? snippet
-            : $"{snippet[..217]}...";
+            : snippet[..(MaximumUsageSnippetLength - 3)].TrimEnd();
+
+        return $"{boundedSnippet}...";
     }
 
     private sealed record LibraryDescriptor(string Name, Assembly Assembly, string SourceRoot, string ComponentNamespace);

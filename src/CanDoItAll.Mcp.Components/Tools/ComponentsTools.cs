@@ -30,7 +30,7 @@ public sealed class ComponentsTools(
     }
 
     [McpServerTool(Name = "component_get", ReadOnly = true, Idempotent = true, OpenWorld = false, UseStructuredContent = true)]
-    [Description("Returns a shared component summary, namespace, parameters, events, dependencies, and sandbox-linked metadata.")]
+    [Description("Returns a shared component summary, namespace, semantic parameters and defaults, events, dependencies, composition guidance, and sandbox-linked metadata.")]
     public Task<McpToolEnvelope<ComponentDocument>> ComponentGetAsync(string component, CancellationToken cancellationToken = default)
     {
         _ = cancellationToken;
@@ -46,7 +46,7 @@ public sealed class ComponentsTools(
     }
 
     [McpServerTool(Name = "component_usage_examples", ReadOnly = true, Idempotent = true, OpenWorld = false, UseStructuredContent = true)]
-    [Description("Returns real shared-component usage examples from sandbox and consumer Razor files such as CanDoItAll.Web.")]
+    [Description("Returns bounded opening-tag usage examples from curated sandbox and consumer Razor files, prioritizing sandbox proof patterns over incidental product usage.")]
     public Task<McpToolEnvelope<ComponentUsageExamplesData>> ComponentUsageExamplesAsync(
         string component,
         int limit = 10,
@@ -99,7 +99,7 @@ public sealed class ComponentsTools(
     }
 
     [McpServerTool(Name = "components_recommend", ReadOnly = true, Idempotent = true, OpenWorld = false, UseStructuredContent = true)]
-    [Description("Recommends the best non-WebGL shared components for a concrete use case, explains the choice and alternatives, and returns required setup, composition rules, and exact follow-up MCP calls. Use this before choosing components or inventing custom UI structure.")]
+    [Description("Recommends the best non-WebGL shared components for a concrete use case, including compact page density, disclosure, metric hierarchy, card anatomy, form and dialog sizing. Returns required setup, per-component composition rules, an operational composition plan, alternatives, and exact follow-up MCP calls. Use this before choosing components or inventing custom UI structure.")]
     public Task<McpToolEnvelope<ComponentRecommendationData>> ComponentsRecommendAsync(
         string useCase,
         string? constraints = null,

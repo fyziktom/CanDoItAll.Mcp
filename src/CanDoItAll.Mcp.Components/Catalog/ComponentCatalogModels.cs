@@ -41,7 +41,8 @@ public sealed record ComponentParameterDocument(
 
 public sealed record ComponentEventDocument(
     string Name,
-    string Type);
+    string Type,
+    string? Summary);
 
 public sealed record ComponentExampleDocument(
     string Id,
@@ -161,5 +162,6 @@ public sealed record ComponentRecommendationDocument(
     string Why,
     IReadOnlyList<string> UseFor,
     IReadOnlyList<string> AvoidFor,
+    IReadOnlyList<string> CompositionRules,
     IReadOnlyList<string> Dependencies,
     double Score);
