@@ -1,4 +1,14 @@
 <Solution>
+  <Folder Name="/external/CanDoItAll.CodeAnalysis/">
+    <Project Path="../CanDoItAll.CodeAnalysis/src/CanDoItAll.CodeAnalytics.Abstractions/CanDoItAll.CodeAnalytics.Abstractions.csproj" />
+    <Project Path="../CanDoItAll.CodeAnalysis/src/CanDoItAll.CodeAnalytics.Analysis/CanDoItAll.CodeAnalytics.Analysis.csproj" />
+    <Project Path="../CanDoItAll.CodeAnalysis/src/CanDoItAll.CodeAnalytics.Application/CanDoItAll.CodeAnalytics.Application.csproj" />
+    <Project Path="../CanDoItAll.CodeAnalysis/src/CanDoItAll.CodeAnalytics.Domain/CanDoItAll.CodeAnalytics.Domain.csproj" />
+    <Project Path="../CanDoItAll.CodeAnalysis/src/CanDoItAll.CodeAnalytics.Facts/CanDoItAll.CodeAnalytics.Facts.csproj" />
+    <Project Path="../CanDoItAll.CodeAnalysis/src/CanDoItAll.CodeAnalytics.Rendering/CanDoItAll.CodeAnalytics.Rendering.csproj" />
+    <Project Path="../CanDoItAll.CodeAnalysis/src/CanDoItAll.CodeAnalytics.Storage/CanDoItAll.CodeAnalytics.Storage.csproj" />
+    <Project Path="../CanDoItAll.CodeAnalysis/src/CanDoItAll.CodeAnalytics.Workspace/CanDoItAll.CodeAnalytics.Workspace.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/CanDoItAll.Mcp.CodeAnalytics/CanDoItAll.Mcp.CodeAnalytics.csproj" />
     <Project Path="src/CanDoItAll.Mcp.Components/CanDoItAll.Mcp.Components.csproj" />

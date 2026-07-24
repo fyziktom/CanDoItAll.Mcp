@@ -24,9 +24,8 @@ Framework references:
 
 - None
 
-Direct package references:
-
-- `Microsoft.Extensions.Logging.Abstractions (10.0.0)`
+Direct package references are maintained in
+[CanDoItAll.Mcp.Core.csproj](CanDoItAll.Mcp.Core.csproj).
 
 ## Architecture Notes
 
@@ -34,5 +33,5 @@ This project is an adapter for agent-facing tooling. It must stay thin over cano
 
 ## Related Docs
 
-- Repository overview: `README.md` at the repo root
-- Current architecture: `docs/architecture-beta.md`
+- [Repository overview](../../README.md)
+- [Architecture and ownership](../../docs/architecture-and-ownership.md)

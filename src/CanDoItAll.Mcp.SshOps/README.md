@@ -24,15 +24,8 @@ Framework references:
 
 - None
 
-Direct package references:
-
-- `ModelContextProtocol (1.1.0)`
-- `SSH.NET (2025.1.0)`
-- `Microsoft.Extensions.Hosting (10.0.0)`
-- `Microsoft.Extensions.Logging.Console (10.0.0)`
-- `Microsoft.Extensions.Options.ConfigurationExtensions (10.0.0)`
-- `Microsoft.Extensions.Http (10.0.0)`
-- `Microsoft.Extensions.Options.DataAnnotations (10.0.0)`
+Direct package references are maintained in
+[CanDoItAll.Mcp.SshOps.csproj](CanDoItAll.Mcp.SshOps.csproj).
 
 ## Architecture Notes
 
@@ -40,5 +33,5 @@ This project is an adapter for agent-facing tooling. It must stay thin over cano
 
 ## Related Docs
 
-- Repository overview: `README.md` at the repo root
-- Current architecture: `docs/architecture-beta.md`
+- [Repository overview](../../README.md)
+- [Architecture and ownership](../../docs/architecture-and-ownership.md)

@@ -24,12 +24,8 @@ Framework references:
 
 - None
 
-Direct package references:
-
-- `coverlet.collector (6.0.4)`
-- `Microsoft.NET.Test.Sdk (17.14.1)`
-- `xunit (2.9.3)`
-- `xunit.runner.visualstudio (3.1.4)`
+Direct package references are maintained in
+[CanDoItAll.Mcp.Mermaid.Tests.csproj](CanDoItAll.Mcp.Mermaid.Tests.csproj).
 
 ## Architecture Notes
 
@@ -37,5 +33,6 @@ Keep these tests focused on Mermaid MCP behavior: syntax catalog indexing, forbi
 
 ## Related Docs
 
-- Mermaid MCP project: `src/CanDoItAll.Mcp.Mermaid/README.md`
-- Repository overview: `README.md` at the repo root
+- [Mermaid MCP project](../../src/CanDoItAll.Mcp.Mermaid/README.md)
+- [Repository overview](../../README.md)
+- [Architecture and ownership](../../docs/architecture-and-ownership.md)

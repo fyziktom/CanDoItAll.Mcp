@@ -34,5 +34,5 @@ This project is an adapter for agent-facing tooling. It must stay thin over cano
 
 ## Related Docs
 
-- Repository overview: `README.md` at the repo root
-- Current architecture: `docs/architecture-beta.md`
+- [Repository overview](../../README.md)
+- [Architecture and ownership](../../docs/architecture-and-ownership.md)

@@ -2,62 +2,111 @@
 
 ## Prerequisites
 
-- .NET 10 SDK.
-- The sibling `CanDoItAll` repository when running resetup or integration tests.
-- The sibling `CanDoItAll.CodeAnalysis` repository for the CodeAnalytics MCP project references.
-- Component packages available through `..\CanDoItAll\ExternalPackages`, as configured in `NuGet.config`.
+- The .NET 10 SDK feature band pinned by `global.json`.
+- A sibling `CanDoItAll` checkout for the local Components package feed, resetup, and
+  integration tests.
+- A sibling `CanDoItAll.CodeAnalysis` checkout for the CodeAnalytics MCP project
+  references.
+- Current Components packages under `..\CanDoItAll\ExternalPackages`, as configured in
+  `NuGet.config`.
 
-## Build
+These are current adoption constraints. See
+[Architecture And Ownership](architecture-and-ownership.md) for their exit conditions.
 
-```powershell
-dotnet restore .\CanDoItAll.Mcp.slnx
-dotnet build .\CanDoItAll.Mcp.slnx -c Release
-```
+## Stable Validation
 
-Use the solution build as the primary compile gate. The solution contains the MCP servers, shared MCP libraries, companion tools, and MCP test projects.
-
-## Stable Tests
-
-```powershell
-dotnet test .\tests\CanDoItAll.Mcp.Components.Tests\CanDoItAll.Mcp.Components.Tests.csproj -c Release
-dotnet test .\tests\CanDoItAll.Mcp.DotNetWatch.Tests\CanDoItAll.Mcp.DotNetWatch.Tests.csproj -c Release
-dotnet test .\tests\CanDoItAll.Mcp.Mermaid.Tests\CanDoItAll.Mcp.Mermaid.Tests.csproj -c Release
-dotnet test .\tests\CanDoItAll.Mcp.SshOps.Tests\CanDoItAll.Mcp.SshOps.Tests.csproj -c Release
-```
-
-## Integration Tests
-
-DotNetWatch integration tests use the MCP repo for server binaries and the sibling `CanDoItAll` repo for workspace settings and runtime state.
+Run the repository-owned validation entry point:
 
 ```powershell
-dotnet test .\tests\CanDoItAll.Mcp.DotNetWatch.IntegrationTests\CanDoItAll.Mcp.DotNetWatch.IntegrationTests.csproj -c Release --filter "Category!=Quarantined"
-```
-
-Run the no-filter integration project only when live process, long-running, and quarantined scenarios are part of the task.
-
-## Machine Resetup
-
-Run resetup from the main CanDoItAll repo:
-
-```powershell
-cd C:\repositories\CanDoItAll
-powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\Reinstall-CanDoItAllMcps.ps1 -McpRepoRoot C:\repositories\CanDoItAll.Mcp
+& .\tools\validation\Test-Repository.ps1
 ```
 
 The script:
 
-- Builds the DotNetWatch shadow host from this repo.
-- Publishes Components, CodeAnalytics, Mermaid, SshOps, and the DotNetWatch tray from this repo.
-- Publishes `CanDoItAll.Manager` from the main repo because it is not an MCP server.
-- Updates `.vscode\mcp.json` in the main repo.
-- Updates `%USERPROFILE%\.codex\config.toml`.
-- Syncs skills from the main repo `codex\skills`.
-- Recreates current MCP install and DotNetWatch shadow artifacts under the main repo `.artifacts` directory.
+1. verifies the required root files and local Markdown links;
+2. restores `CanDoItAll.Mcp.slnx`;
+3. builds the solution in `Release`;
+4. runs the Components, DotNetWatch, Mermaid, and SshOps stable test projects.
+
+The command creates normal ignored .NET output under `bin` and `obj`. Preview the
+external-tool work without changing build output:
+
+```powershell
+& .\tools\validation\Test-Repository.ps1 -WhatIf
+```
+
+If restore already completed, use:
+
+```powershell
+& .\tools\validation\Test-Repository.ps1 -NoRestore
+```
+
+## Build Only
+
+```powershell
+dotnet restore .\CanDoItAll.Mcp.slnx
+dotnet build .\CanDoItAll.Mcp.slnx --configuration Release --no-restore
+```
+
+The solution build is the primary compile gate. It contains the MCP servers, shared MCP
+libraries, companion tools, and MCP test projects.
+
+## Integration Tests
+
+DotNetWatch integration tests start local processes and use the sibling `CanDoItAll`
+workspace for settings and runtime state. Run the non-quarantined integration gate only
+when those prerequisites are available:
+
+```powershell
+& .\tools\validation\Test-Repository.ps1 -IncludeIntegrationTests
+```
+
+Run the integration project without its filter only when live-process, long-running, and
+quarantined scenarios are explicitly part of the task.
+
+## Machine Resetup
+
+From this repository root, enter the sibling main repository and invoke its owned resetup
+entry point:
+
+```powershell
+Push-Location ..\CanDoItAll
+try {
+    & .\tools\Reinstall-CanDoItAllMcps.ps1 -McpRepoRoot ..\CanDoItAll.Mcp
+}
+finally {
+    Pop-Location
+}
+```
+
+The resetup workflow:
+
+- builds the DotNetWatch shadow host from this repository;
+- publishes Components, CodeAnalytics, Mermaid, SshOps, and the DotNetWatch tray from
+  this repository;
+- publishes `CanDoItAll.Manager` from the main repository because it is not an MCP
+  server;
+- updates the main repository's `.vscode\mcp.json` and the user's Codex configuration;
+- syncs repository-owned skills;
+- recreates current MCP install and shadow artifacts under the main repository's ignored
+  `.artifacts` directory.
+
+Resetup changes machine configuration and local install artifacts. Review its parameters
+in the owning repository before running it.
 
 ## Manual DotNetWatch Shadow Rebuild
 
-From the main CanDoItAll repo:
+From this repository root:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File ..\CanDoItAll.Mcp\tools\CanDoItAll.Mcp.DotNetWatch\Start-CanDoItAllDotNetWatchMcp.ps1 -RepoRoot . -McpRepoRoot ..\CanDoItAll.Mcp -Configuration Release -SettingsPath .\CanDoItAll.Mcp.DotNetWatch.settings.json -ForceRebuild -PrepareOnly
+& .\tools\CanDoItAll.Mcp.DotNetWatch\Start-CanDoItAllDotNetWatchMcp.ps1 `
+    -RepoRoot ..\CanDoItAll `
+    -McpRepoRoot . `
+    -Configuration Release `
+    -SettingsPath ..\CanDoItAll\CanDoItAll.Mcp.DotNetWatch.settings.json `
+    -ForceRebuild `
+    -PrepareOnly
 ```
+
+This command creates or replaces ignored shadow-build output in the sibling main
+repository.

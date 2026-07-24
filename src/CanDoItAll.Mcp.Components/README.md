@@ -35,9 +35,8 @@ Framework references:
 
 - `Microsoft.AspNetCore.App`
 
-Direct package references:
-
-- `ModelContextProtocol (1.1.0)`
+Direct package references are maintained in
+[CanDoItAll.Mcp.Components.csproj](CanDoItAll.Mcp.Components.csproj).
 
 ## Architecture Notes
 
@@ -90,5 +89,5 @@ When an agent uses non-default notification or tooltip placement, it should vali
 
 ## Related Docs
 
-- Repository overview: `README.md` at the repo root
-- Current architecture: `docs/architecture-beta.md`
+- [Repository overview](../../README.md)
+- [Architecture and ownership](../../docs/architecture-and-ownership.md)

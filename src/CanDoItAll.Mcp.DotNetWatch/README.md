@@ -25,12 +25,8 @@ Framework references:
 
 - `Microsoft.AspNetCore.App`
 
-Direct package references:
-
-- `Microsoft.Extensions.Hosting (10.0.0)`
-- `Microsoft.Extensions.Http (10.0.0)`
-- `ModelContextProtocol (1.1.0)`
-- `System.Management (10.0.0)`
+Direct package references are maintained in
+[CanDoItAll.Mcp.DotNetWatch.csproj](CanDoItAll.Mcp.DotNetWatch.csproj).
 
 ## Architecture Notes
 
@@ -38,5 +34,5 @@ This project is an adapter for agent-facing tooling. It must stay thin over cano
 
 ## Related Docs
 
-- Repository overview: `README.md` at the repo root
-- Current architecture: `docs/architecture-beta.md`
+- [Repository overview](../../README.md)
+- [Architecture and ownership](../../docs/architecture-and-ownership.md)
