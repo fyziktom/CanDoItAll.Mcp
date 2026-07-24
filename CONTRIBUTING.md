@@ -1,10 +1,15 @@
 # Contributing
 
-## Contribution Policy
+CanDoItAll.Mcp accepts code contributions only from partners who have been
+explicitly approved by the maintainer. Unsolicited pull requests are not
+accepted.
 
-Focused issues and pull requests are welcome. Discuss broad architecture changes before
-implementation, and report security concerns through the private process in
-[SECURITY.md](SECURITY.md), not through a public issue.
+To discuss becoming an approved partner, contact the maintainer on LinkedIn
+using the handle `fyziktom`. Please wait for approval before preparing or
+opening a pull request.
+
+Report security concerns through the private process in [SECURITY.md](SECURITY.md), not
+through a public issue.
 
 ## Development Setup
 
@@ -43,6 +48,7 @@ available.
 
 ## Pull Requests
 
+- Open a pull request only after partner approval.
 - Keep changes focused.
 - Add or update tests for behavior changes.
 - Describe protocol, settings, and installation effects.
