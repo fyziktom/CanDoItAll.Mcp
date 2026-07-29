@@ -1,7 +1,7 @@
 # CanDoItAll.Mcp
 
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download/dotnet/10.0)
-[![License](https://img.shields.io/badge/license-MIT--derived%20with%20website%20link-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 CanDoItAll.Mcp contains the CanDoItAll MCP servers, shared MCP runtime libraries, and
 local companion tools. Keeping these projects separate from the main application makes
@@ -111,11 +111,7 @@ those dependencies have reproducible package or coordinated checkout contracts.
 
 ## License And Contributions
 
-This repository uses the
-[MIT-Derived License with CanDoItAll Website Link Requirement](LICENSE). Redistributions
-of the software or a substantial portion of it in source or binary form must include at
-least one link to [aicandoitall.com](https://aicandoitall.com). One such link satisfies
-the added condition for a distribution containing multiple covered CanDoItAll libraries.
+This repository uses the [MIT License](LICENSE).
 
 Code contributions are limited to partners approved by the maintainer. See
 [CONTRIBUTING.md](CONTRIBUTING.md) and contact the `fyziktom` account on LinkedIn before
