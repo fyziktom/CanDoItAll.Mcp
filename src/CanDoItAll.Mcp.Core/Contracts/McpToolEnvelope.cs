@@ -30,7 +30,7 @@ public record McpToolEnvelope<T>(
     public IReadOnlyList<string>? NextSuggestedTools { get; init; }
 
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public object? WorkflowGuidance { get; init; }
+    public McpWorkflowGuidance? WorkflowGuidance { get; init; }
 
     public static McpToolEnvelope<T> Success(
         string tool,
@@ -126,6 +126,21 @@ public sealed record ToolEnvelope<T>(
             error);
     }
 }
+
+/// <summary>
+/// Next-step guidance a server can attach to a tool response.
+/// </summary>
+/// <remarks>
+/// This is deliberately a concrete record rather than <see cref="object"/>: the MCP output
+/// schema is generated from the CLR type, and an untyped property serialises to the bare
+/// <c>true</c> ("any") schema, which strict MCP clients reject for every tool on the server.
+/// </remarks>
+public sealed record McpWorkflowGuidance(
+    string Mode,
+    string Next,
+    string Verify,
+    string? Guard = null,
+    string? ReasonCode = null);
 
 public record ToolError(string Code, string Message, object? Details = null);
 

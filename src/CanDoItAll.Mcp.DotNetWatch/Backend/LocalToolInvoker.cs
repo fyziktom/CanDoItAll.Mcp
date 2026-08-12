@@ -187,7 +187,7 @@ internal sealed class LocalToolInvoker(
     public Task<ToolEnvelope<AtomicRollbackData>> AppRollbackAsync(string? logicalAppId = null, string? transactionId = null, CancellationToken cancellationToken = default)
         => ExecuteAsync("candoitall_app_rollback", _ => coordinator.RollbackAppAsync(logicalAppId, transactionId, cancellationToken), guidancePolicy.ForRollback);
 
-    private async Task<ToolEnvelope<T>> ExecuteAsync<T>(string toolName, Func<string, Task<T>> callback, Func<T, WorkflowGuidanceData?>? guidanceFactory = null)
+    private async Task<ToolEnvelope<T>> ExecuteAsync<T>(string toolName, Func<string, Task<T>> callback, Func<T, McpWorkflowGuidance?>? guidanceFactory = null)
     {
         var correlationId = CorrelationIdFactory.Create();
 

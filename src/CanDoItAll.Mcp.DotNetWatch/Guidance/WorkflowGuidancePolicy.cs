@@ -7,7 +7,7 @@ public sealed class WorkflowGuidancePolicy(RuntimeConfiguration configuration)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    public WorkflowGuidanceData? ForWorkspace(WorkspaceInfoData workspace)
+    public McpWorkflowGuidance? ForWorkspace(WorkspaceInfoData workspace)
     {
         if (!configuration.WorkflowGuidanceEnabled)
         {
@@ -28,7 +28,7 @@ public sealed class WorkflowGuidancePolicy(RuntimeConfiguration configuration)
         return Budget("watch-small-step", "start-default-watch", "wait RevisionConfirmed then browser-check", "stay-nearby", "NoActiveApp");
     }
 
-    public WorkflowGuidanceData? ForApp(AppStatusData status)
+    public McpWorkflowGuidance? ForApp(AppStatusData status)
     {
         if (!configuration.WorkflowGuidanceEnabled)
         {
@@ -64,7 +64,7 @@ public sealed class WorkflowGuidancePolicy(RuntimeConfiguration configuration)
         return null;
     }
 
-    public WorkflowGuidanceData? ForWait(AppWaitData wait)
+    public McpWorkflowGuidance? ForWait(AppWaitData wait)
     {
         if (!configuration.WorkflowGuidanceEnabled)
         {
@@ -89,7 +89,7 @@ public sealed class WorkflowGuidancePolicy(RuntimeConfiguration configuration)
         return null;
     }
 
-    public WorkflowGuidanceData? ForOperation(OperationStatusData status)
+    public McpWorkflowGuidance? ForOperation(OperationStatusData status)
     {
         if (!configuration.WorkflowGuidanceEnabled)
         {
@@ -114,7 +114,7 @@ public sealed class WorkflowGuidancePolicy(RuntimeConfiguration configuration)
         return null;
     }
 
-    public WorkflowGuidanceData? ForAtomic(AtomicUpdateData data)
+    public McpWorkflowGuidance? ForAtomic(AtomicUpdateData data)
     {
         if (!configuration.WorkflowGuidanceEnabled)
         {
@@ -129,7 +129,7 @@ public sealed class WorkflowGuidancePolicy(RuntimeConfiguration configuration)
         return Budget("rollback-available", "validate-committed-runtime", "rollback if regression appears", null, "Committed");
     }
 
-    public WorkflowGuidanceData? ForRollback(AtomicRollbackData data)
+    public McpWorkflowGuidance? ForRollback(AtomicRollbackData data)
     {
         if (!configuration.WorkflowGuidanceEnabled)
         {
@@ -139,7 +139,7 @@ public sealed class WorkflowGuidancePolicy(RuntimeConfiguration configuration)
         return Budget("watch-validate-now", "validate-restored-runtime", "resume-small-step-iteration", "stay-nearby", "RollbackCommitted");
     }
 
-    public WorkflowGuidanceData? ForDiagnosis(DiagnoseStartFailureData data)
+    public McpWorkflowGuidance? ForDiagnosis(DiagnoseStartFailureData data)
     {
         if (!configuration.WorkflowGuidanceEnabled)
         {
@@ -152,9 +152,9 @@ public sealed class WorkflowGuidancePolicy(RuntimeConfiguration configuration)
     public bool ShouldEmit(string toolName)
         => configuration.WorkflowGuidanceEnabled && configuration.WorkflowGuidanceToolAllowList.Contains(toolName);
 
-    private WorkflowGuidanceData? Budget(string mode, string next, string verify, string? guard, string? reasonCode)
+    private McpWorkflowGuidance? Budget(string mode, string next, string verify, string? guard, string? reasonCode)
     {
-        var guidance = new WorkflowGuidanceData(mode, next, verify, guard, reasonCode);
+        var guidance = new McpWorkflowGuidance(mode, next, verify, guard, reasonCode);
         return JsonSerializer.Serialize(guidance, JsonOptions).Length <= configuration.WorkflowGuidanceMaxSerializedCharacters
             ? guidance
             : null;

@@ -433,7 +433,7 @@ public sealed class BundleImprovementIntegrationTests : IAsyncLifetime
         return envelope!;
     }
 
-    private static WorkflowGuidanceData? ReadGuidance<T>(ToolEnvelope<T> envelope)
+    private static McpWorkflowGuidance? ReadGuidance<T>(ToolEnvelope<T> envelope)
     {
         if (envelope.WorkflowGuidance is null)
         {
@@ -441,7 +441,7 @@ public sealed class BundleImprovementIntegrationTests : IAsyncLifetime
         }
 
         var json = JsonSerializer.Serialize(envelope.WorkflowGuidance, JsonOptions);
-        return JsonSerializer.Deserialize<WorkflowGuidanceData>(json, JsonOptions);
+        return JsonSerializer.Deserialize<McpWorkflowGuidance>(json, JsonOptions);
     }
 
     private static JsonSerializerOptions JsonOptions { get; } = CreateJsonOptions();

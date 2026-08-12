@@ -139,13 +139,6 @@ public sealed record RuntimeRevisionData(
     DateTimeOffset ObservedUtc,
     bool IsConfirmed);
 
-public sealed record WorkflowGuidanceData(
-    string Mode,
-    string Next,
-    string Verify,
-    string? Guard = null,
-    string? ReasonCode = null);
-
 public sealed record BridgeStatusData(
     string Mode,
     string? BackendId,
