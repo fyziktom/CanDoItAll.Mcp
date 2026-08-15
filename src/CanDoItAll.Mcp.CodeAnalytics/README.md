@@ -4,6 +4,11 @@
 
 MCP adapter for source, solution, symbol, and code-analysis inspection over the local CanDoItAll workspace.
 
+The `code_analytics_impacted_tests_get` operation accepts actual changed diff seeds and
+separate test workspace paths. Files that were only inspected are context, not impact
+seeds. Behavior-preserving containment is an explicit caller assertion and is reported
+as such; it never silently proves semantic equivalence.
+
 ## Project Type
 
 - SDK: `Microsoft.NET.Sdk`
@@ -12,6 +17,7 @@ MCP adapter for source, solution, symbol, and code-analysis inspection over the 
 
 ```powershell
 dotnet build src/CanDoItAll.Mcp.CodeAnalytics/CanDoItAll.Mcp.CodeAnalytics.csproj
+dotnet test tests/CanDoItAll.Mcp.CodeAnalytics.Tests/CanDoItAll.Mcp.CodeAnalytics.Tests.csproj
 ```
 
 ## References

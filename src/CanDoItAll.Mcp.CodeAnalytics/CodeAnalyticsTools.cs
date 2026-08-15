@@ -10,6 +10,15 @@ namespace CanDoItAll.Mcp.CodeAnalytics;
 [McpServerToolType]
 public sealed class CodeAnalyticsTools(ICodeAnalyticsCoordinator coordinator, ILogger<CodeAnalyticsTools> logger)
 {
+    [McpServerTool(Name = "code_analytics_impacted_tests_get", ReadOnly = true, Idempotent = true, OpenWorld = false, UseStructuredContent = true)]
+    [Description("Selects tests impacted by actual changed diff seeds across explicitly supplied test workspaces, including test suites in separate .slnx files. Put only changed files in Changes with exact line ranges where available; put inspected or context-only helpers in ContextOnlyPaths so they never seed impact. BehaviorPreservingImplementation is an explicit caller assertion allowed only after checking API/shape stability; the analyzer reports containment evidence and uncertainty instead of treating the assertion as semantic proof.")]
+    public Task<McpToolEnvelope<CodeAnalyticsImpactedTestsResult>> CodeAnalyticsImpactedTestsGetAsync(
+        CodeAnalyticsImpactedTestsInput request,
+        CancellationToken cancellationToken = default)
+    {
+        return ExecuteAsync("code_analytics_impacted_tests_get", () => coordinator.GetImpactedTestsAsync(request, cancellationToken));
+    }
+
     [McpServerTool(Name = "code_analytics_snapshot_build", ReadOnly = false, Idempotent = false, OpenWorld = false, UseStructuredContent = true)]
     [Description("Builds or refreshes an architectural snapshot for a C# solution or project using the sibling CanDoItAll.CodeAnalysis libraries. For large solutions, scope by project, namespace, or project path unless the task is architecture-wide.")]
     public Task<McpToolEnvelope<SnapshotBuildResponse>> CodeAnalyticsSnapshotBuildAsync(CodeAnalyticsBuildSnapshotInput? request = null, CancellationToken cancellationToken = default)
@@ -182,7 +191,7 @@ public sealed class CodeAnalyticsTools(ICodeAnalyticsCoordinator coordinator, IL
     {
         return code switch
         {
-            "DocumentNotFound" or "FocusedContextNotFound" or "ProjectNotFound" or "SnapshotNotFound" or "SolutionPathNotFound" or "SymbolNotFound" or "TypeNotFound" => "not_found",
+            "DocumentNotFound" or "FocusedContextNotFound" or "ProjectNotFound" or "RepositoryRootNotFound" or "SnapshotNotFound" or "SolutionPathNotFound" or "SymbolNotFound" or "TestWorkspacePathNotFound" or "TypeNotFound" => "not_found",
             "ValidationError" => "validation_error",
             _ => "failed"
         };

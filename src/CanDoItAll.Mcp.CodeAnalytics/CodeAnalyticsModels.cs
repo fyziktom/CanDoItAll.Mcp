@@ -1,5 +1,7 @@
 using System.ComponentModel;
 using CanDoItAll.CodeAnalytics.Abstractions;
+using CanDoItAll.CodeAnalytics.Abstractions.Responses;
+using CanDoItAll.CodeAnalytics.Domain.TestImpact;
 
 namespace CanDoItAll.Mcp.CodeAnalytics;
 
@@ -191,3 +193,61 @@ public sealed class CodeAnalyticsDocumentTargetInput
     [Description("Optional document path. Supports snapshot-relative or absolute paths.")]
     public string? DocumentPath { get; init; }
 }
+
+public sealed class CodeAnalyticsImpactedTestsInput
+{
+    [Description("Repository root used to resolve relative changed-file and test-workspace paths. When omitted, the configured CodeAnalytics repository root is used.")]
+    public string? RepositoryRootPath { get; init; }
+
+    [Description("Test workspaces to search. Supply every relevant test .sln, .slnx, or .csproj, including suites separated from the production solution. If tests are in the production solution, supply that solution here.")]
+    public IReadOnlyList<CodeAnalyticsTestWorkspaceInput> TestWorkspaces { get; init; } = [];
+
+    [Description("Actual production or test code changes from the diff. Include only files whose contents changed, with exact new-file line ranges when available. Do not add helpers merely inspected, navigated through, or used as context.")]
+    public IReadOnlyList<CodeAnalyticsChangedCodeInput> Changes { get; init; } = [];
+
+    [Description("Files inspected or used for context but not changed. They are acknowledged in the result and never seed impact. A path cannot appear in both Changes and ContextOnlyPaths.")]
+    public IReadOnlyList<string> ContextOnlyPaths { get; init; } = [];
+
+    [Description("Maximum semantic members the analyzer may visit before returning an explicit incomplete fallback instead of silently trimming impact. Default 5000.")]
+    public int MaxVisitedMembers { get; init; } = 5000;
+
+    [Description("Maximum selector entries shared across required and conditional output after safe compaction. The analyzer promotes or broadens instead of truncating when the budget cannot fit. Default 30.")]
+    public int MaxSelectors { get; init; } = 30;
+
+    [Description("Maximum representative relationship paths returned as explanations. This limits evidence display, not impacted-test discovery. Default 12.")]
+    public int MaxReasonPaths { get; init; } = 12;
+}
+
+public sealed class CodeAnalyticsTestWorkspaceInput
+{
+    [Description("Absolute or repository-relative path to a test .sln, .slnx, or .csproj.")]
+    public string Path { get; init; } = string.Empty;
+
+    [Description("Optional stable suite label such as Unit, Components, Integration, Memory, or Playwright.")]
+    public string? Name { get; init; }
+}
+
+public sealed class CodeAnalyticsChangedCodeInput
+{
+    [Description("Absolute or repository-relative path to a file whose content actually changed in the diff.")]
+    public string Path { get; init; } = string.Empty;
+
+    [Description("Changed one-based inclusive line ranges in the new file. Leave empty only when exact hunks are unavailable; that intentionally broadens analysis to the whole document.")]
+    public IReadOnlyList<CodeAnalyticsChangedLineRangeInput> LineRanges { get; init; } = [];
+
+    [Description("Declared behavior effect: Unknown, BehaviorChange, ContractOrShapeChange, or BehaviorPreservingImplementation. Use BehaviorPreservingImplementation only after confirming public/API shape is unchanged; it is a caller assertion, not proof of semantic equivalence.")]
+    public ChangeBehaviorIntent BehaviorIntent { get; init; } = ChangeBehaviorIntent.Unknown;
+}
+
+public sealed class CodeAnalyticsChangedLineRangeInput
+{
+    [Description("One-based inclusive first changed line in the new file.")]
+    public int StartLine { get; init; }
+
+    [Description("One-based inclusive last changed line in the new file.")]
+    public int EndLine { get; init; }
+}
+
+public sealed record CodeAnalyticsImpactedTestsResult(
+    TestImpactResponse Analysis,
+    IReadOnlyList<string> IgnoredContextOnlyPaths);

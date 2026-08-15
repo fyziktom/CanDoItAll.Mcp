@@ -19,6 +19,7 @@
     <Project Path="src/CanDoItAll.Mcp.SshOps/CanDoItAll.Mcp.SshOps.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/CanDoItAll.Mcp.CodeAnalytics.Tests/CanDoItAll.Mcp.CodeAnalytics.Tests.csproj" />
     <Project Path="tests/CanDoItAll.Mcp.Components.Tests/CanDoItAll.Mcp.Components.Tests.csproj" />
     <Project Path="tests/CanDoItAll.Mcp.DotNetWatch.IntegrationTests/CanDoItAll.Mcp.DotNetWatch.IntegrationTests.csproj" />
     <Project Path="tests/CanDoItAll.Mcp.DotNetWatch.Tests/CanDoItAll.Mcp.DotNetWatch.Tests.csproj" />

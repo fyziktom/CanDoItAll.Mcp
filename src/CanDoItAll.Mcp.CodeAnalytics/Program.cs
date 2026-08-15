@@ -2,13 +2,16 @@ using CanDoItAll.CodeAnalytics.Abstractions;
 using CanDoItAll.CodeAnalytics.Abstractions.Options;
 using CanDoItAll.CodeAnalytics.Analysis.Graphs;
 using CanDoItAll.CodeAnalytics.Analysis.Rules;
+using CanDoItAll.CodeAnalytics.Analysis.TestImpact;
 using CanDoItAll.CodeAnalytics.Application.Services;
+using CanDoItAll.CodeAnalytics.Application.TestImpact;
 using CanDoItAll.CodeAnalytics.Facts.Dependencies;
 using CanDoItAll.CodeAnalytics.Facts.Documentation;
 using CanDoItAll.CodeAnalytics.Facts.Members;
 using CanDoItAll.CodeAnalytics.Facts.Persistence;
 using CanDoItAll.CodeAnalytics.Facts.Services;
 using CanDoItAll.CodeAnalytics.Facts.Symbols;
+using CanDoItAll.CodeAnalytics.Facts.TestImpact;
 using CanDoItAll.CodeAnalytics.Rendering.Exports;
 using CanDoItAll.CodeAnalytics.Rendering.Markdown;
 using CanDoItAll.CodeAnalytics.Rendering.Mermaid;
@@ -72,6 +75,10 @@ internal static class Program
         services.AddSingleton<DependencyFactCollector>();
         services.AddSingleton<ServiceRegistrationCollector>();
         services.AddSingleton<PersistenceFactCollector>();
+        services.AddSingleton<TestImpactSemanticGraphBuilder>();
+        services.AddSingleton<ChangedCodeResolver>();
+        services.AddSingleton<ReverseImpactGraphBuilder>();
+        services.AddSingleton<ImpactedTestSelector>();
         services.AddSingleton<StronglyConnectedComponentFinder>();
         services.AddSingleton<ArchitectureInsightBuilder>();
         services.AddSingleton<MarkdownSummaryWriter>();
@@ -81,6 +88,7 @@ internal static class Program
         services.AddSingleton<ExportBundleBuilder>();
         services.AddSingleton<SnapshotJsonSerializer>();
         services.AddSingleton<FileSnapshotRepository>();
+        services.AddSingleton<ITestImpactAnalysisService, TestImpactAnalysisService>();
         services.AddSingleton<ICodeAnalyticsApplicationService, CodeAnalyticsApplicationService>();
         services.AddSingleton<ICodeAnalyticsCoordinator, CodeAnalyticsCoordinator>();
     }
