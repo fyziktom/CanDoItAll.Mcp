@@ -137,7 +137,7 @@ public sealed class ProcessOptions
 
     public bool TailwindAutoDetect { get; set; } = true;
 
-    public int TailwindWatchDebounceMilliseconds { get; set; } = 150;
+    public string TailwindWatchScript { get; set; } = "watch";
 }
 
 public sealed class BackendOptions

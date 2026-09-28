@@ -396,6 +396,22 @@ internal static class BackendDashboardPage
       return `<div class="action-row">${buttons.join("")}</div>`;
     }
 
+    function renderTailwind(session) {
+      const tailwind = session?.tailwind;
+      if (!tailwind) return "";
+
+      return `
+        <div class="meta-row">
+          <span>Tailwind <strong>${escapeHtml(formatEnum(tailwind.state))}</strong></span>
+          <span>Script <strong>${escapeHtml(`npm run ${tailwind.script}`)}</strong></span>
+          <span>PID <strong>${escapeHtml(tailwind.processId ?? "n/a")}</strong></span>
+          <span>Builds <strong>${escapeHtml(tailwind.buildCount ?? 0)}</strong></span>
+          <span>Last Build <strong>${escapeHtml(tailwind.lastBuildUtc ?? "n/a")}</strong></span>
+          <span>Restarts <strong>${escapeHtml(tailwind.restartCount ?? 0)}</strong></span>
+        </div>
+        <div>${escapeHtml(tailwind.summary)}</div>`;
+    }
+
     function sessionActions(backendId, session) {
       if (!session || !session.sessionId) return "";
       const safeBackend = JSON.stringify(backendId);
@@ -434,6 +450,7 @@ internal static class BackendDashboardPage
             <span>Rollback <strong>${escapeHtml(session.rollbackAvailable ? "yes" : "no")}</strong></span>
           </div>
           <div>${escapeHtml(session.watch?.summary || session.health?.summary || "No summary.")}</div>
+          ${renderTailwind(session)}
           ${renderAppLaunchButtons(session)}
           ${sessionActions(backend.backendId, session)}
         </article>`).join("")}</div>`;

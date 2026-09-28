@@ -68,7 +68,7 @@ public sealed class RuntimeConfiguration
         UsePollingFileWatcher = options.Process.UsePollingFileWatcher;
         WatchSuppressBrowserRefresh = options.Process.WatchSuppressBrowserRefresh;
         TailwindAutoDetect = options.Process.TailwindAutoDetect;
-        TailwindWatchDebounce = TimeSpan.FromMilliseconds(Math.Max(25, options.Process.TailwindWatchDebounceMilliseconds));
+        TailwindWatchScript = options.Process.TailwindWatchScript?.Trim() ?? string.Empty;
 
         BackendEnabled = options.Backend.Enabled;
         BackendBindHost = options.Backend.BindHost.Trim();
@@ -200,7 +200,7 @@ public sealed class RuntimeConfiguration
 
     public bool TailwindAutoDetect { get; }
 
-    public TimeSpan TailwindWatchDebounce { get; }
+    public string TailwindWatchScript { get; }
 
     public bool BackendEnabled { get; }
 

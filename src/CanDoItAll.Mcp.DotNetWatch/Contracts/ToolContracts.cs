@@ -97,6 +97,16 @@ public enum HotReloadOutcome
     RestartRequired
 }
 
+public enum TailwindWatchState
+{
+    Starting,
+    Ready,
+    BuildFailed,
+    Restarting,
+    Unavailable,
+    Stopped
+}
+
 public enum WhenAppRunningPolicy
 {
     StopAndResume,
@@ -232,6 +242,19 @@ public sealed record WatchStatusData(
     public long? ReadyForHotReloadSequence { get; init; }
 }
 
+public sealed record TailwindWatchStatusData(
+    TailwindWatchState State,
+    string Summary,
+    string PackageDirectory,
+    string Script,
+    int? ProcessId,
+    DateTimeOffset? StartedUtc,
+    DateTimeOffset? LastBuildUtc,
+    string? LastBuildDuration,
+    int BuildCount,
+    int RestartCount,
+    string? LastError);
+
 public sealed record AppStatusData(
     string SessionId,
     string CorrelationId,
@@ -265,6 +288,8 @@ public sealed record AppStatusData(
     public AppLaunchType LaunchType { get; init; } = AppLaunchType.Project;
 
     public string? EntryPath { get; init; }
+
+    public TailwindWatchStatusData? Tailwind { get; init; }
 }
 
 public sealed record AppStartData(

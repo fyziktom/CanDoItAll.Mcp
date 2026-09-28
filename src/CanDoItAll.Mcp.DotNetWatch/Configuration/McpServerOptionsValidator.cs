@@ -36,9 +36,9 @@ public sealed class McpServerOptionsValidator : IValidateOptions<McpServerOption
             failures.Add("Process:ForceKillAfterMs must be greater than or equal to Process:GracefulStopTimeoutMs.");
         }
 
-        if (options.Process.TailwindWatchDebounceMilliseconds <= 0)
+        if (options.Process.TailwindAutoDetect && !TailwindWatchScriptName.IsSupported(options.Process.TailwindWatchScript))
         {
-            failures.Add("Process:TailwindWatchDebounceMilliseconds must be greater than zero.");
+            failures.Add("Process:TailwindWatchScript must name an npm script using letters, digits, ':', '.', '_' or '-'.");
         }
 
         if (options.Logs.BufferCapacity <= 0)

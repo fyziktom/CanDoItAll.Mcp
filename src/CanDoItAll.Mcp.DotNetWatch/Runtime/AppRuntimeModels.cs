@@ -134,6 +134,7 @@ public sealed partial class AppSession
     private bool _watchReadyForHotReload;
     private long? _watchReadyForHotReloadSequence;
     private bool _watchHasReachedReadyState;
+    private TailwindWatchStatusData? _tailwind;
 
     public AppSession(
         string sessionId,
@@ -254,6 +255,21 @@ public sealed partial class AppSession
         lock (_gate)
         {
             _rollbackAvailable = rollbackAvailable;
+        }
+    }
+
+    public void UpdateTailwindWatch(TailwindWatchStatusData status)
+    {
+        lock (_gate)
+        {
+            var stateChanged = _tailwind?.State != status.State;
+            var errorChanged = status.LastError is not null &&
+                               !string.Equals(_tailwind?.LastError, status.LastError, StringComparison.Ordinal);
+            _tailwind = status;
+            if (stateChanged || errorChanged)
+            {
+                RecordEventLocked($"Tailwind watch {status.State}: {status.Summary}");
+            }
         }
     }
 
@@ -525,7 +541,8 @@ public sealed partial class AppSession
                 ActiveTransactionId = _activeTransactionId,
                 RollbackAvailable = _rollbackAvailable,
                 LaunchType = LaunchType,
-                EntryPath = EntryPath
+                EntryPath = EntryPath,
+                Tailwind = _tailwind
             };
         }
     }
@@ -1398,7 +1415,7 @@ public sealed class AppRuntimeManager(
         session.AttachProcess(process);
         try
         {
-            var tailwindCompanion = await tailwindCompanionCoordinator.TryStartAsync(session, template, cancellationToken);
+            var tailwindCompanion = tailwindCompanionCoordinator.TryStart(session, template);
             if (tailwindCompanion is not null)
             {
                 _tailwindCompanions[session.SessionId] = tailwindCompanion;

@@ -1,35 +1,26 @@
-using System.Diagnostics;
+using System.ComponentModel;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Threading.Channels;
 using CanDoItAll.Mcp.DotNetWatch.Configuration;
 
 namespace CanDoItAll.Mcp.DotNetWatch.Runtime;
-
-[Flags]
-internal enum TailwindWatchRootKind
-{
-    None = 0,
-    Workspace = 1,
-    ContentSource = 2
-}
-
-internal sealed record TailwindWatchRoot(string FullPath, TailwindWatchRootKind Kind);
 
 internal sealed record TailwindWorkspacePlan(
     string RepoRoot,
     string PackageDirectory,
     string PackageJsonPath,
-    string InputPath,
-    string OutputPath,
-    string ScriptCommand,
-    IReadOnlyList<TailwindWatchRoot> WatchRoots);
+    string ScriptName,
+    string ScriptCommand);
+
+internal sealed record NpmCommand(string Command, IReadOnlyList<string> Arguments);
 
 public sealed class TailwindCompanionCoordinator(
     RuntimeConfiguration configuration,
+    ProcessSupervisor processSupervisor,
     ILogger<TailwindCompanionCoordinator> logger)
 {
-    internal async Task<TailwindSessionCompanion?> TryStartAsync(AppSession session, AppStartTemplate template, CancellationToken cancellationToken)
+    internal TailwindSessionCompanion? TryStart(AppSession session, AppStartTemplate template)
     {
         if (!configuration.TailwindAutoDetect ||
             template.LaneKind != RuntimeLaneKind.SourceWatch ||
@@ -38,433 +29,352 @@ public sealed class TailwindCompanionCoordinator(
             return null;
         }
 
-        var plan = TailwindWorkspaceDetector.TryDetect(template.ProjectPath, template.WorkingDirectory);
+        var plan = TailwindWorkspaceDetector.TryDetect(
+            template.ProjectPath,
+            template.WorkingDirectory,
+            configuration.TailwindWatchScript);
         if (plan is null)
         {
             return null;
         }
 
-        var companion = new TailwindSessionCompanion(session, plan, configuration.TailwindWatchDebounce, logger);
-        var started = await companion.StartAsync(cancellationToken);
-        return started ? companion : null;
+        var companion = new TailwindSessionCompanion(
+            session,
+            plan,
+            processSupervisor,
+            NpmCommandResolver.Resolve,
+            TailwindWatchRestartPolicy.Default,
+            logger);
+        companion.Start();
+        return companion;
     }
 }
 
-internal sealed class TailwindSessionCompanion(
-    AppSession session,
-    TailwindWorkspacePlan plan,
-    TimeSpan debounceWindow,
-    ILogger logger) : IAsyncDisposable
+// Runs the package's own npm watch script next to a dotnet watch session. Tailwind rebuilds on its own;
+// this companion only keeps the script running, holds its stdin open (Tailwind's --watch exits on stdin
+// EOF) and reports whether builds keep completing.
+internal sealed class TailwindSessionCompanion : IAsyncDisposable
 {
-    private static readonly HashSet<string> IgnoredPathSegments = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".artifacts",
-        ".git",
-        ".mcp-state",
-        "bin",
-        "node_modules",
-        "obj"
-    };
+    private const string OwnerKind = "tailwind";
+    private readonly AppSession session;
+    private readonly TailwindWorkspacePlan plan;
+    private readonly ProcessSupervisor processSupervisor;
+    private readonly Func<IReadOnlyList<string>, NpmCommand> resolveNpmCommand;
+    private readonly TailwindWatchRestartPolicy restartPolicy;
+    private readonly ILogger logger;
+    private readonly CancellationTokenSource stopping = new();
+    private readonly RingLogBuffer processLog = new(200);
+    private readonly object gate = new();
+    private ManagedProcess? activeProcess;
+    private Task? supervisionTask;
+    private TailwindWatchStatusData status;
+    private int disposed;
 
-    private static readonly HashSet<string> TailwindWorkspaceExtensions = new(StringComparer.OrdinalIgnoreCase)
+    public TailwindSessionCompanion(
+        AppSession session,
+        TailwindWorkspacePlan plan,
+        ProcessSupervisor processSupervisor,
+        Func<IReadOnlyList<string>, NpmCommand> resolveNpmCommand,
+        TailwindWatchRestartPolicy restartPolicy,
+        ILogger logger)
     {
-        ".cjs",
-        ".css",
-        ".js",
-        ".json",
-        ".mjs",
-        ".ts",
-        ".yaml",
-        ".yml"
-    };
+        this.session = session;
+        this.plan = plan;
+        this.processSupervisor = processSupervisor;
+        this.resolveNpmCommand = resolveNpmCommand;
+        this.restartPolicy = restartPolicy;
+        this.logger = logger;
+        status = new TailwindWatchStatusData(
+            TailwindWatchState.Starting,
+            $"Detected Tailwind package at {plan.PackageDirectory}; starting '{WatchCommand}'.",
+            plan.PackageDirectory,
+            plan.ScriptName,
+            ProcessId: null,
+            StartedUtc: null,
+            LastBuildUtc: null,
+            LastBuildDuration: null,
+            BuildCount: 0,
+            RestartCount: 0,
+            LastError: null);
+    }
 
-    private static readonly HashSet<string> TailwindWorkspaceFileNames = new(StringComparer.OrdinalIgnoreCase)
+    public TailwindWatchStatusData Status
     {
-        "package-lock.json",
-        "package.json",
-        "pnpm-lock.yaml",
-        "yarn.lock"
-    };
+        get
+        {
+            lock (gate)
+            {
+                return status;
+            }
+        }
+    }
 
-    private static readonly HashSet<string> TailwindContentSourceExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".astro",
-        ".cs",
-        ".cshtml",
-        ".html",
-        ".js",
-        ".jsx",
-        ".mdx",
-        ".razor",
-        ".ts",
-        ".tsx",
-        ".vue"
-    };
+    private string WatchCommand => $"npm run {plan.ScriptName}";
 
-    private readonly List<FileSystemWatcher> _watchers = [];
-    private readonly CancellationTokenSource _stoppingCts = new();
-    private readonly Channel<string> _changes = Channel.CreateUnbounded<string>(new UnboundedChannelOptions
-    {
-        SingleReader = true,
-        SingleWriter = false
-    });
-    private Process? _activeProcess;
-    private Task? _loopTask;
-
-    public async Task<bool> StartAsync(CancellationToken cancellationToken)
+    public void Start()
     {
         var cliPath = TailwindWorkspaceDetector.ResolveTailwindCliPath(plan.PackageDirectory);
         if (!File.Exists(cliPath))
         {
-            AppendLog($"Detected Tailwind package at {plan.PackageDirectory}, but the local CLI was not found at {cliPath}.", isError: true);
-            return false;
+            SetStatus(current => current with
+            {
+                State = TailwindWatchState.Unavailable,
+                Summary = $"Tailwind dependencies are not installed: {cliPath} is missing. Run 'npm install' in {plan.PackageDirectory}, then restart the app session."
+            });
+            return;
         }
 
-        foreach (var root in plan.WatchRoots)
-        {
-            if (!Directory.Exists(root.FullPath))
-            {
-                continue;
-            }
-
-            var watcher = new FileSystemWatcher(root.FullPath)
-            {
-                Filter = "*.*",
-                IncludeSubdirectories = true,
-                NotifyFilter = NotifyFilters.CreationTime |
-                               NotifyFilters.DirectoryName |
-                               NotifyFilters.FileName |
-                               NotifyFilters.LastWrite |
-                               NotifyFilters.Size
-            };
-
-            watcher.Changed += (_, args) => OnWatchEvent(root, args.FullPath);
-            watcher.Created += (_, args) => OnWatchEvent(root, args.FullPath);
-            watcher.Deleted += (_, args) => OnWatchEvent(root, args.FullPath);
-            watcher.Renamed += (_, args) =>
-            {
-                OnWatchEvent(root, args.OldFullPath);
-                OnWatchEvent(root, args.FullPath);
-            };
-            watcher.Error += (_, args) =>
-            {
-                var message = args.GetException()?.Message ?? "Unknown file watcher error.";
-                AppendLog($"File watcher under {root.FullPath} reported an error: {message}. Scheduling a rebuild.", isError: false);
-                _changes.Writer.TryWrite(root.FullPath);
-            };
-            watcher.EnableRaisingEvents = true;
-            _watchers.Add(watcher);
-        }
-
-        if (_watchers.Count == 0)
-        {
-            AppendLog($"Detected Tailwind package at {plan.PackageDirectory}, but no usable watch roots were available.", isError: true);
-            return false;
-        }
-
-        AppendLog(
-            $"Companion active. Package={ToRelative(plan.PackageDirectory)}, Input={ToRelative(plan.InputPath)}, Output={ToRelative(plan.OutputPath)}, Roots={string.Join(", ", plan.WatchRoots.Select(root => ToRelative(root.FullPath)))}",
-            isError: false);
-
-        await RunBuildAsync("Initial Tailwind build completed.", cancellationToken);
-        _loopTask = Task.Run(() => RunLoopAsync(_stoppingCts.Token), CancellationToken.None);
-        return true;
+        SetStatus(current => current);
+        supervisionTask = Task.Run(() => SuperviseUntilStoppedAsync(stopping.Token), CancellationToken.None);
     }
 
     public async ValueTask DisposeAsync()
     {
-        _stoppingCts.Cancel();
-        _changes.Writer.TryComplete();
-
-        foreach (var watcher in _watchers)
-        {
-            watcher.Dispose();
-        }
-
-        await StopActiveProcessAsync();
-
-        if (_loopTask is not null)
-        {
-            try
-            {
-                await _loopTask;
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (ChannelClosedException)
-            {
-            }
-        }
-
-        _stoppingCts.Dispose();
-    }
-
-    private async Task RunLoopAsync(CancellationToken cancellationToken)
-    {
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            string firstChangedPath;
-            try
-            {
-                firstChangedPath = await _changes.Reader.ReadAsync(cancellationToken);
-            }
-            catch (ChannelClosedException)
-            {
-                return;
-            }
-
-            var changedPaths = await DrainChangedPathsAsync(firstChangedPath, cancellationToken);
-            var summary = BuildChangeSummary(changedPaths);
-            AppendLog(summary, isError: false);
-            await RunBuildAsync(summary, cancellationToken);
-        }
-    }
-
-    private async Task<IReadOnlyCollection<string>> DrainChangedPathsAsync(string firstChangedPath, CancellationToken cancellationToken)
-    {
-        var changedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            firstChangedPath
-        };
-
-        var quietUntilUtc = DateTime.UtcNow + debounceWindow;
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            while (_changes.Reader.TryRead(out var changedPath))
-            {
-                changedPaths.Add(changedPath);
-                quietUntilUtc = DateTime.UtcNow + debounceWindow;
-            }
-
-            var remaining = quietUntilUtc - DateTime.UtcNow;
-            if (remaining <= TimeSpan.Zero)
-            {
-                return changedPaths;
-            }
-
-            var delay = remaining > TimeSpan.FromMilliseconds(50)
-                ? TimeSpan.FromMilliseconds(50)
-                : remaining;
-            await Task.Delay(delay, cancellationToken);
-        }
-
-        return changedPaths;
-    }
-
-    private void OnWatchEvent(TailwindWatchRoot root, string fullPath)
-    {
-        if (!IsRelevantWatchPath(root, fullPath))
+        if (Interlocked.Exchange(ref disposed, 1) != 0)
         {
             return;
         }
 
-        _changes.Writer.TryWrite(fullPath);
+        await stopping.CancelAsync();
+        if (supervisionTask is not null)
+        {
+            await supervisionTask;
+        }
+
+        ManagedProcess? process;
+        lock (gate)
+        {
+            process = activeProcess;
+            activeProcess = null;
+        }
+
+        if (process is not null)
+        {
+            try
+            {
+                await process.StopAsync(force: true, CancellationToken.None);
+            }
+            catch (Exception exception) when (exception is InvalidOperationException or Win32Exception)
+            {
+                logger.LogWarning(exception, "Tailwind watch for session {SessionId} could not be stopped cleanly.", session.SessionId);
+            }
+        }
+
+        SetStatus(current => current with
+        {
+            State = TailwindWatchState.Stopped,
+            Summary = $"'{WatchCommand}' stopped with its app session.",
+            ProcessId = null
+        });
+        stopping.Dispose();
     }
 
-    private bool IsRelevantWatchPath(TailwindWatchRoot root, string fullPath)
+    // The companion must never take its app session down: an unexpected failure is logged and reported
+    // as Unavailable, and stopping the session still stops the watch process.
+    private async Task SuperviseUntilStoppedAsync(CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(fullPath))
-        {
-            return false;
-        }
-
-        var normalizedPath = Path.GetFullPath(fullPath);
-        if (PathContainsIgnoredSegment(normalizedPath) ||
-            string.Equals(normalizedPath, Path.GetFullPath(plan.OutputPath), StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
-        var fileName = Path.GetFileName(normalizedPath);
-        if (string.IsNullOrWhiteSpace(fileName))
-        {
-            return false;
-        }
-
-        var extension = Path.GetExtension(normalizedPath);
-        var kind = root.Kind;
-        if (kind.HasFlag(TailwindWatchRootKind.Workspace) &&
-            (TailwindWorkspaceFileNames.Contains(fileName) ||
-             fileName.StartsWith("tailwind.config.", StringComparison.OrdinalIgnoreCase) ||
-             fileName.StartsWith("postcss.config.", StringComparison.OrdinalIgnoreCase) ||
-             TailwindWorkspaceExtensions.Contains(extension)))
-        {
-            return true;
-        }
-
-        return kind.HasFlag(TailwindWatchRootKind.ContentSource) &&
-               TailwindContentSourceExtensions.Contains(extension);
-    }
-
-    private async Task RunBuildAsync(string reason, CancellationToken cancellationToken)
-    {
-        Directory.CreateDirectory(Path.GetDirectoryName(plan.OutputPath) ?? plan.PackageDirectory);
-
-        var startInfo = new ProcessStartInfo(TailwindWorkspaceDetector.ResolveTailwindCliPath(plan.PackageDirectory))
-        {
-            WorkingDirectory = plan.PackageDirectory,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-        startInfo.ArgumentList.Add("-i");
-        startInfo.ArgumentList.Add(plan.InputPath);
-        startInfo.ArgumentList.Add("-o");
-        startInfo.ArgumentList.Add(plan.OutputPath);
-
-        using var process = new Process
-        {
-            StartInfo = startInfo,
-            EnableRaisingEvents = true
-        };
-
-        var stopwatch = Stopwatch.StartNew();
-        process.Start();
-        Interlocked.Exchange(ref _activeProcess, process);
-
         try
         {
-            var stdoutTask = ReadStreamAsync(process.StandardOutput, isError: false, cancellationToken);
-            var stderrTask = ReadStreamAsync(process.StandardError, isError: true, cancellationToken);
-            await Task.WhenAll(stdoutTask, stderrTask, process.WaitForExitAsync(cancellationToken));
+            await SuperviseAsync(cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            await TerminateProcessAsync(process);
-            throw;
         }
-        finally
+        catch (Exception exception)
         {
-            Interlocked.CompareExchange(ref _activeProcess, null, process);
+            logger.LogError(exception, "Tailwind watch supervision failed for session {SessionId}.", session.SessionId);
+            SetStatus(current => current with
+            {
+                State = TailwindWatchState.Unavailable,
+                Summary = $"Tailwind watch supervision failed: {exception.Message}"
+            });
         }
-
-        stopwatch.Stop();
-        if (process.ExitCode != 0)
-        {
-            AppendLog($"Tailwind build failed with exit code {process.ExitCode}.", isError: true);
-            return;
-        }
-
-        if (File.Exists(plan.OutputPath))
-        {
-            var outputLastWriteUtc = File.GetLastWriteTimeUtc(plan.OutputPath);
-            AppendLog($"{reason} Tailwind output propagated in {stopwatch.ElapsedMilliseconds} ms at {outputLastWriteUtc:O}.", isError: false);
-            return;
-        }
-
-        AppendLog($"{reason} Tailwind build completed in {stopwatch.ElapsedMilliseconds} ms, but the output file was not found.", isError: true);
     }
 
-    private async Task ReadStreamAsync(StreamReader reader, bool isError, CancellationToken cancellationToken)
+    private async Task SuperviseAsync(CancellationToken cancellationToken)
     {
+        TimeSpan? restartDelay = null;
+        var restartCount = 0;
         while (!cancellationToken.IsCancellationRequested)
         {
-            var line = await reader.ReadLineAsync(cancellationToken);
-            if (line is null)
+            var tracker = new TailwindBuildCycleTracker();
+            var startedUtc = DateTimeOffset.UtcNow;
+            SetStatus(current => current with
             {
-                break;
+                State = TailwindWatchState.Starting,
+                Summary = $"Starting '{WatchCommand}' in {plan.PackageDirectory}; waiting for the first Tailwind build.",
+                ProcessId = null,
+                StartedUtc = startedUtc,
+                LastBuildUtc = null,
+                LastBuildDuration = null,
+                BuildCount = 0,
+                RestartCount = restartCount
+            });
+            ManagedProcess process;
+            try
+            {
+                var command = resolveNpmCommand(["run", plan.ScriptName]);
+                process = await processSupervisor.StartAsync(
+                    new ManagedProcessStartInfo(
+                        OwnerKind,
+                        session.SessionId,
+                        command.Command,
+                        command.Arguments,
+                        plan.PackageDirectory,
+                        new Dictionary<string, string>
+                        {
+                            ["NO_COLOR"] = "1",
+                            ["npm_config_update_notifier"] = "false"
+                        },
+                        session.CorrelationId,
+                        session.SessionVersion),
+                    processLog,
+                    entry => ObserveProcessLogAsync(entry, tracker),
+                    onExitAsync: null,
+                    CancellationToken.None);
+            }
+            catch (Exception exception) when (exception is InvalidOperationException or Win32Exception or IOException or ToolInvocationException)
+            {
+                logger.LogWarning(exception, "Tailwind watch for session {SessionId} could not be started.", session.SessionId);
+                SetStatus(current => current with
+                {
+                    State = TailwindWatchState.Unavailable,
+                    Summary = $"'{WatchCommand}' could not be started in {plan.PackageDirectory}: {exception.Message}",
+                    ProcessId = null
+                });
+                return;
             }
 
-            var parsedAsError = isError ||
-                                line.Contains("error:", StringComparison.OrdinalIgnoreCase) ||
-                                line.StartsWith("Error", StringComparison.OrdinalIgnoreCase);
-            AppendLog(line, parsedAsError);
-        }
-    }
+            lock (gate)
+            {
+                activeProcess = process;
+                SetStatusLocked(status with { ProcessId = process.Pid });
+            }
 
-    private void AppendLog(string message, bool isError)
-    {
-        var line = $"[tailwind] {message}";
-        session.LogBuffer.Append("Tailwind", "tailwind", session.SessionVersion, session.CorrelationId, line);
-
-        if (isError)
-        {
-            logger.LogError("[tailwind:{SessionId}] {Message}", session.SessionId, message);
-            return;
-        }
-
-        logger.LogInformation("[tailwind:{SessionId}] {Message}", session.SessionId, message);
-    }
-
-    private static bool PathContainsIgnoredSegment(string fullPath)
-    {
-        var segments = fullPath.Split(
-            [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
-            StringSplitOptions.RemoveEmptyEntries);
-        return segments.Any(IgnoredPathSegments.Contains);
-    }
-
-    private string BuildChangeSummary(IReadOnlyCollection<string> changedPaths)
-    {
-        var relativePaths = changedPaths
-            .Select(ToRelative)
-            .OrderBy(static path => path, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-
-        if (relativePaths.Length == 0)
-        {
-            return "Tailwind sources changed.";
-        }
-
-        if (relativePaths.Length == 1)
-        {
-            return $"Detected Tailwind-relevant change in {relativePaths[0]}.";
-        }
-
-        var preview = string.Join(", ", relativePaths.Take(3));
-        var remainingCount = relativePaths.Length - 3;
-        return remainingCount > 0
-            ? $"Detected {relativePaths.Length} Tailwind-relevant changes: {preview}, and {remainingCount} more."
-            : $"Detected {relativePaths.Length} Tailwind-relevant changes: {preview}.";
-    }
-
-    private async Task StopActiveProcessAsync()
-    {
-        var activeProcess = Interlocked.Exchange(ref _activeProcess, null);
-        if (activeProcess is null)
-        {
-            return;
-        }
-
-        await TerminateProcessAsync(activeProcess);
-    }
-
-    private static async Task TerminateProcessAsync(Process process)
-    {
-        try
-        {
-            if (process.HasExited)
+            int? exitCode;
+            try
+            {
+                exitCode = await process.Completion.WaitAsync(cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 return;
             }
 
-            process.Kill(entireProcessTree: true);
-            await process.WaitForExitAsync(CancellationToken.None);
-        }
-        catch (InvalidOperationException)
-        {
-        }
-        catch (ArgumentException)
-        {
+            restartDelay = restartPolicy.NextDelay(restartDelay, DateTimeOffset.UtcNow - startedUtc);
+            restartCount++;
+            lock (gate)
+            {
+                activeProcess = null;
+                var exitDescription = exitCode?.ToString(CultureInfo.InvariantCulture) ?? "unknown";
+                SetStatusLocked(status with
+                {
+                    State = TailwindWatchState.Restarting,
+                    Summary = $"{WithDetail($"'{WatchCommand}' exited with code {exitDescription}", tracker.LastError)}. Restarting in {FormatDuration(restartDelay.Value)}.",
+                    ProcessId = null,
+                    LastError = tracker.LastError ?? status.LastError
+                });
+            }
+
+            try
+            {
+                await Task.Delay(restartDelay.Value, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
         }
     }
 
-    private string ToRelative(string path)
+    private Task ObserveProcessLogAsync(LogEntry entry, TailwindBuildCycleTracker tracker)
     {
-        try
+        var line = TailwindWatchOutputParser.Parse(entry.Text);
+        if (line.Text.Length == 0)
         {
-            return Path.GetRelativePath(plan.RepoRoot, path);
+            return Task.CompletedTask;
         }
-        catch
+
+        session.LogBuffer.Append("Tailwind", "tailwind", session.SessionVersion, session.CorrelationId, $"[tailwind] {line.Text}");
+        if (entry.Source is not ("ProcessStdOut" or "ProcessStdErr"))
         {
-            return path;
+            return Task.CompletedTask;
+        }
+
+        lock (gate)
+        {
+            switch (line.Kind)
+            {
+                case TailwindWatchLineKind.Error:
+                    if (tracker.ObserveError(line))
+                    {
+                        SetStatusLocked(status with
+                        {
+                            State = TailwindWatchState.BuildFailed,
+                            Summary = $"{WithDetail("Tailwind reported an error", tracker.LastError)}.",
+                            LastError = tracker.LastError
+                        });
+                    }
+
+                    break;
+                case TailwindWatchLineKind.BuildCompleted:
+                    var failedWith = tracker.LastError;
+                    SetStatusLocked(tracker.CompleteCycle() == TailwindBuildCycleOutcome.Failed
+                        ? status with
+                        {
+                            State = TailwindWatchState.BuildFailed,
+                            Summary = $"{WithDetail("Tailwind build failed", failedWith)}. '{WatchCommand}' keeps running and recovers on the next successful build.",
+                            LastError = failedWith
+                        }
+                        : status with
+                        {
+                            State = TailwindWatchState.Ready,
+                            Summary = $"'{WatchCommand}' is running; last build finished in {line.Duration}.",
+                            LastBuildUtc = entry.TimestampUtc,
+                            LastBuildDuration = line.Duration,
+                            BuildCount = status.BuildCount + 1,
+                            LastError = null
+                        });
+                    break;
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void SetStatus(Func<TailwindWatchStatusData, TailwindWatchStatusData> update)
+    {
+        lock (gate)
+        {
+            SetStatusLocked(update(status));
         }
     }
+
+    private void SetStatusLocked(TailwindWatchStatusData next)
+    {
+        if (next.State != status.State)
+        {
+            logger.LogInformation(
+                "[tailwind:{SessionId}] {State}: {Summary}",
+                session.SessionId,
+                next.State,
+                next.Summary);
+        }
+
+        status = next;
+        session.UpdateTailwindWatch(next);
+    }
+
+    private static string WithDetail(string message, string? detail)
+        => string.IsNullOrWhiteSpace(detail) ? message : $"{message}: {detail.TrimEnd('.')}";
+
+    private static string FormatDuration(TimeSpan duration)
+        => duration.TotalSeconds < 60
+            ? $"{duration.TotalSeconds.ToString("0.#", CultureInfo.InvariantCulture)} s"
+            : $"{duration.TotalMinutes.ToString("0.#", CultureInfo.InvariantCulture)} min";
 }
 
-internal static class TailwindWorkspaceDetector
+internal static partial class TailwindWorkspaceDetector
 {
     private static readonly HashSet<string> IgnoredDirectories = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -478,12 +388,7 @@ internal static class TailwindWorkspaceDetector
         "obj"
     };
 
-    private static readonly Regex ImportDirectiveRegex = new("""@import\s+(?<quote>['"])(?<path>[^'"]+)\k<quote>""", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    private static readonly Regex SourceDirectiveRegex = new("""@source\s+(?<quote>['"])(?<path>[^'"]+)\k<quote>""", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    private static readonly Regex InputArgumentRegex = new("""(?:^|\s)(?:-i|--input)(?:\s+|=)(?<value>"[^"]+"|'[^']+'|\S+)""", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    private static readonly Regex OutputArgumentRegex = new("""(?:^|\s)(?:-o|--output)(?:\s+|=)(?<value>"[^"]+"|'[^']+'|\S+)""", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
-    public static TailwindWorkspacePlan? TryDetect(string projectPath, string workingDirectory)
+    public static TailwindWorkspacePlan? TryDetect(string projectPath, string workingDirectory, string preferredScriptName)
     {
         var projectDirectory = Path.GetDirectoryName(projectPath);
         if (string.IsNullOrWhiteSpace(projectDirectory))
@@ -497,15 +402,13 @@ internal static class TailwindWorkspaceDetector
         }
 
         var repoRoot = ResolveSearchRoot(projectDirectory);
-        var candidates = EnumeratePackageJsonFiles(repoRoot)
-            .Select(packageJsonPath => TryCreatePlan(packageJsonPath, repoRoot, projectDirectory))
+        return EnumeratePackageJsonFiles(repoRoot)
+            .Select(packageJsonPath => TryCreatePlan(packageJsonPath, repoRoot, projectDirectory, preferredScriptName))
             .Where(static plan => plan is not null)
             .Cast<TailwindWorkspacePlan>()
             .OrderBy(plan => MeasurePathDistance(projectDirectory, plan.PackageDirectory))
             .ThenBy(plan => plan.PackageDirectory.Length)
-            .ToArray();
-
-        return candidates.FirstOrDefault();
+            .FirstOrDefault();
     }
 
     public static string ResolveTailwindCliPath(string packageDirectory)
@@ -517,44 +420,63 @@ internal static class TailwindWorkspaceDetector
             OperatingSystem.IsWindows() ? "tailwindcss.cmd" : "tailwindcss");
     }
 
-    private static TailwindWorkspacePlan? TryCreatePlan(string packageJsonPath, string repoRoot, string projectDirectory)
+    // The configured script (conventionally "watch") wins when it runs a Tailwind watch directly or
+    // through other scripts of the same package, for example via concurrently. Otherwise another
+    // Tailwind watch script is chosen, preferring one whose output lands in the project being run.
+    internal static bool TrySelectWatchScript(
+        IReadOnlyDictionary<string, string> scripts,
+        string packageDirectory,
+        string projectDirectory,
+        string preferredScriptName,
+        out string scriptName)
+    {
+        scriptName = string.Empty;
+        if (TailwindWatchScriptName.IsSupported(preferredScriptName) &&
+            RunsTailwindWatch(preferredScriptName, scripts, new HashSet<string>(StringComparer.Ordinal)))
+        {
+            scriptName = preferredScriptName;
+            return true;
+        }
+
+        var candidate = scripts.Keys
+            .Where(TailwindWatchScriptName.IsSupported)
+            .Where(name => RunsTailwindWatch(name, scripts, new HashSet<string>(StringComparer.Ordinal)))
+            .OrderByDescending(name => WritesUnder(scripts[name], packageDirectory, projectDirectory))
+            .ThenByDescending(name => name.Contains("watch", StringComparison.OrdinalIgnoreCase))
+            .ThenBy(name => name, StringComparer.Ordinal)
+            .FirstOrDefault();
+        if (candidate is null)
+        {
+            return false;
+        }
+
+        scriptName = candidate;
+        return true;
+    }
+
+    private static TailwindWorkspacePlan? TryCreatePlan(
+        string packageJsonPath,
+        string repoRoot,
+        string projectDirectory,
+        string preferredScriptName)
     {
         JsonDocument document;
         try
         {
             document = JsonDocument.Parse(File.ReadAllText(packageJsonPath));
         }
-        catch
+        catch (Exception exception) when (exception is JsonException or IOException or UnauthorizedAccessException)
         {
             return null;
         }
 
         using (document)
         {
-            if (!HasTailwindDependency(document.RootElement) ||
-                !TryResolveTailwindScript(document.RootElement, out var scriptCommand) ||
-                !TryExtractInputOutputPaths(scriptCommand, out var inputArgument, out var outputArgument))
-            {
-                return null;
-            }
-
             var packageDirectory = Path.GetDirectoryName(packageJsonPath);
-            if (string.IsNullOrWhiteSpace(packageDirectory))
-            {
-                return null;
-            }
-
-            var inputPath = ResolvePath(packageDirectory, inputArgument);
-            var outputPath = ResolvePath(packageDirectory, outputArgument);
-            if (!File.Exists(inputPath) ||
-                !IsPathUnderRoot(inputPath, repoRoot) ||
-                !IsPathUnderRoot(outputPath, repoRoot))
-            {
-                return null;
-            }
-
-            var watchRoots = BuildWatchRoots(repoRoot, projectDirectory, packageDirectory, inputPath);
-            if (watchRoots.Count == 0)
+            if (string.IsNullOrWhiteSpace(packageDirectory) ||
+                !HasTailwindDependency(document.RootElement) ||
+                !TryReadScripts(document.RootElement, out var scripts) ||
+                !TrySelectWatchScript(scripts, packageDirectory, projectDirectory, preferredScriptName, out var scriptName))
             {
                 return null;
             }
@@ -563,187 +485,67 @@ internal static class TailwindWorkspaceDetector
                 repoRoot,
                 packageDirectory,
                 packageJsonPath,
-                inputPath,
-                outputPath,
-                scriptCommand,
-                watchRoots);
+                scriptName,
+                scripts[scriptName]);
         }
     }
 
-    private static IReadOnlyList<TailwindWatchRoot> BuildWatchRoots(
-        string repoRoot,
-        string projectDirectory,
-        string packageDirectory,
-        string inputPath)
+    private static bool RunsTailwindWatch(
+        string scriptName,
+        IReadOnlyDictionary<string, string> scripts,
+        HashSet<string> visited)
     {
-        var rootKinds = new Dictionary<string, TailwindWatchRootKind>(StringComparer.OrdinalIgnoreCase);
-
-        AddRoot(rootKinds, packageDirectory, TailwindWatchRootKind.Workspace, repoRoot);
-
-        var parsedCssFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var contentRoots = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        ParseCssGraph(inputPath, repoRoot, parsedCssFiles, contentRoots);
-
-        foreach (var cssFile in parsedCssFiles)
+        if (!visited.Add(scriptName) || !scripts.TryGetValue(scriptName, out var command))
         {
-            var cssDirectory = Path.GetDirectoryName(cssFile);
-            if (!string.IsNullOrWhiteSpace(cssDirectory))
-            {
-                AddRoot(rootKinds, cssDirectory, TailwindWatchRootKind.Workspace, repoRoot);
-            }
+            return false;
         }
 
-        foreach (var contentRoot in contentRoots)
+        if (InvokesTailwind(command) && WatchFlagRegex().IsMatch(command))
         {
-            AddRoot(rootKinds, contentRoot, TailwindWatchRootKind.ContentSource, repoRoot);
+            return true;
         }
 
-        if (!rootKinds.Values.Any(kind => kind.HasFlag(TailwindWatchRootKind.ContentSource)))
-        {
-            AddRoot(rootKinds, packageDirectory, TailwindWatchRootKind.ContentSource, repoRoot);
-            AddRoot(rootKinds, projectDirectory, TailwindWatchRootKind.ContentSource, repoRoot);
-
-            var repoSrcRoot = Path.Combine(repoRoot, "src");
-            if (Directory.Exists(repoSrcRoot))
-            {
-                AddRoot(rootKinds, repoSrcRoot, TailwindWatchRootKind.ContentSource, repoRoot);
-            }
-        }
-
-        return rootKinds
-            .Select(static pair => new TailwindWatchRoot(pair.Key, pair.Value))
-            .OrderBy(static root => root.FullPath, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+        return ScriptReferenceRegex()
+            .Matches(command)
+            .Any(match => RunsTailwindWatch(match.Groups["name"].Value, scripts, visited));
     }
 
-    private static void ParseCssGraph(
-        string inputPath,
-        string repoRoot,
-        HashSet<string> parsedCssFiles,
-        HashSet<string> contentRoots)
+    private static bool InvokesTailwind(string command)
+        => command.Contains("tailwindcss", StringComparison.OrdinalIgnoreCase) ||
+           command.Contains("@tailwindcss/cli", StringComparison.OrdinalIgnoreCase);
+
+    private static bool WritesUnder(string command, string packageDirectory, string projectDirectory)
     {
-        var pending = new Stack<string>();
-        pending.Push(inputPath);
-
-        while (pending.Count > 0)
+        var output = OutputArgumentRegex().Match(command);
+        if (!output.Success)
         {
-            var currentPath = pending.Pop();
-            if (!File.Exists(currentPath) || !parsedCssFiles.Add(currentPath))
-            {
-                continue;
-            }
-
-            string contents;
-            try
-            {
-                contents = File.ReadAllText(currentPath);
-            }
-            catch
-            {
-                continue;
-            }
-
-            var currentDirectory = Path.GetDirectoryName(currentPath) ?? Path.GetDirectoryName(inputPath) ?? repoRoot;
-
-            foreach (Match match in ImportDirectiveRegex.Matches(contents))
-            {
-                var importedPath = ResolvePathFromDirective(currentDirectory, repoRoot, match.Groups["path"].Value, defaultExtension: ".css");
-                if (importedPath is not null)
-                {
-                    pending.Push(importedPath);
-                }
-            }
-
-            foreach (Match match in SourceDirectiveRegex.Matches(contents))
-            {
-                var sourcePath = ResolveWatchTargetPath(currentDirectory, repoRoot, match.Groups["path"].Value);
-                if (sourcePath is not null)
-                {
-                    contentRoots.Add(sourcePath);
-                }
-            }
+            return false;
         }
+
+        var outputPath = output.Groups["value"].Value.Trim().Trim('"', '\'');
+        return !string.IsNullOrWhiteSpace(outputPath) &&
+               IsPathUnderRoot(ResolvePath(packageDirectory, outputPath), projectDirectory);
     }
 
-    private static string? ResolvePathFromDirective(string baseDirectory, string repoRoot, string rawValue, string? defaultExtension)
+    private static bool TryReadScripts(JsonElement root, out IReadOnlyDictionary<string, string> scripts)
     {
-        if (string.IsNullOrWhiteSpace(rawValue) ||
-            (!rawValue.StartsWith(".", StringComparison.Ordinal) && !Path.IsPathRooted(rawValue)))
+        var values = new Dictionary<string, string>(StringComparer.Ordinal);
+        scripts = values;
+        if (!root.TryGetProperty("scripts", out var scriptElement) || scriptElement.ValueKind != JsonValueKind.Object)
         {
-            return null;
+            return false;
         }
 
-        var candidate = ResolvePath(baseDirectory, rawValue);
-        if (File.Exists(candidate) && IsPathUnderRoot(candidate, repoRoot))
+        foreach (var property in scriptElement.EnumerateObject())
         {
-            return candidate;
-        }
-
-        if (!string.IsNullOrWhiteSpace(defaultExtension) &&
-            string.IsNullOrWhiteSpace(Path.GetExtension(candidate)))
-        {
-            var extendedCandidate = candidate + defaultExtension;
-            if (File.Exists(extendedCandidate) && IsPathUnderRoot(extendedCandidate, repoRoot))
+            if (property.Value.ValueKind == JsonValueKind.String &&
+                !string.IsNullOrWhiteSpace(property.Value.GetString()))
             {
-                return extendedCandidate;
+                values[property.Name] = property.Value.GetString()!;
             }
         }
 
-        return null;
-    }
-
-    private static string? ResolveWatchTargetPath(string baseDirectory, string repoRoot, string rawValue)
-    {
-        if (string.IsNullOrWhiteSpace(rawValue))
-        {
-            return null;
-        }
-
-        var wildcardIndex = rawValue.IndexOfAny(['*', '?', '{', '[']);
-        var normalizedValue = wildcardIndex >= 0
-            ? rawValue[..wildcardIndex].TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-            : rawValue;
-        if (string.IsNullOrWhiteSpace(normalizedValue))
-        {
-            return null;
-        }
-
-        var candidate = ResolvePath(baseDirectory, normalizedValue);
-        if (Directory.Exists(candidate) && IsPathUnderRoot(candidate, repoRoot))
-        {
-            return candidate;
-        }
-
-        if (File.Exists(candidate) && IsPathUnderRoot(candidate, repoRoot))
-        {
-            return Path.GetDirectoryName(candidate);
-        }
-
-        return null;
-    }
-
-    private static void AddRoot(
-        IDictionary<string, TailwindWatchRootKind> rootKinds,
-        string rootPath,
-        TailwindWatchRootKind kind,
-        string repoRoot)
-    {
-        if (string.IsNullOrWhiteSpace(rootPath))
-        {
-            return;
-        }
-
-        var normalizedPath = Path.GetFullPath(rootPath);
-        if (!Directory.Exists(normalizedPath) ||
-            !IsPathUnderRoot(normalizedPath, repoRoot) ||
-            PathContainsIgnoredSegment(normalizedPath))
-        {
-            return;
-        }
-
-        rootKinds[normalizedPath] = rootKinds.TryGetValue(normalizedPath, out var existing)
-            ? existing | kind
-            : kind;
+        return values.Count > 0;
     }
 
     private static bool HasTailwindDependency(JsonElement root)
@@ -761,59 +563,6 @@ internal static class TailwindWorkspaceDetector
                dependencies.TryGetProperty(dependencyName, out _);
     }
 
-    private static bool TryResolveTailwindScript(JsonElement root, out string command)
-    {
-        command = string.Empty;
-        if (!root.TryGetProperty("scripts", out var scripts) || scripts.ValueKind != JsonValueKind.Object)
-        {
-            return false;
-        }
-
-        var candidates = scripts.EnumerateObject()
-            .Select(property => new KeyValuePair<string, string>(property.Name, property.Value.GetString() ?? string.Empty))
-            .Where(static pair => !string.IsNullOrWhiteSpace(pair.Value))
-            .OrderByDescending(static pair => pair.Key.Contains("build", StringComparison.OrdinalIgnoreCase))
-            .ThenByDescending(static pair => pair.Key.Contains("watch", StringComparison.OrdinalIgnoreCase))
-            .ThenBy(static pair => pair.Key, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-
-        foreach (var candidate in candidates)
-        {
-            if (!candidate.Value.Contains("tailwindcss", StringComparison.OrdinalIgnoreCase) &&
-                !candidate.Value.Contains("@tailwindcss/cli", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            if (!TryExtractInputOutputPaths(candidate.Value, out _, out _))
-            {
-                continue;
-            }
-
-            command = candidate.Value;
-            return true;
-        }
-
-        return false;
-    }
-
-    internal static bool TryExtractInputOutputPaths(string command, out string inputPath, out string outputPath)
-    {
-        inputPath = string.Empty;
-        outputPath = string.Empty;
-
-        var inputMatch = InputArgumentRegex.Match(command);
-        var outputMatch = OutputArgumentRegex.Match(command);
-        if (!inputMatch.Success || !outputMatch.Success)
-        {
-            return false;
-        }
-
-        inputPath = TrimQuotes(inputMatch.Groups["value"].Value);
-        outputPath = TrimQuotes(outputMatch.Groups["value"].Value);
-        return !string.IsNullOrWhiteSpace(inputPath) && !string.IsNullOrWhiteSpace(outputPath);
-    }
-
     private static IEnumerable<string> EnumeratePackageJsonFiles(string repoRoot)
     {
         var pending = new Stack<string>();
@@ -827,7 +576,7 @@ internal static class TailwindWorkspaceDetector
             {
                 packageJsonFiles = Directory.EnumerateFiles(directory, "package.json", SearchOption.TopDirectoryOnly);
             }
-            catch
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
                 continue;
             }
@@ -842,7 +591,7 @@ internal static class TailwindWorkspaceDetector
             {
                 childDirectories = Directory.EnumerateDirectories(directory, "*", SearchOption.TopDirectoryOnly);
             }
-            catch
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
                 continue;
             }
@@ -897,7 +646,7 @@ internal static class TailwindWorkspaceDetector
             return Directory.EnumerateFiles(directory, "*.sln", SearchOption.TopDirectoryOnly).Any() ||
                    Directory.EnumerateFiles(directory, "*.slnx", SearchOption.TopDirectoryOnly).Any();
         }
-        catch
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             return false;
         }
@@ -905,18 +654,11 @@ internal static class TailwindWorkspaceDetector
 
     private static int MeasurePathDistance(string fromDirectory, string toDirectory)
     {
-        try
-        {
-            var relativePath = Path.GetRelativePath(fromDirectory, toDirectory);
-            return relativePath.Split(
+        var relativePath = Path.GetRelativePath(fromDirectory, toDirectory);
+        return relativePath.Split(
                 [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
                 StringSplitOptions.RemoveEmptyEntries)
-                .Count(segment => !string.Equals(segment, ".", StringComparison.Ordinal));
-        }
-        catch
-        {
-            return int.MaxValue;
-        }
+            .Count(segment => !string.Equals(segment, ".", StringComparison.Ordinal));
     }
 
     private static bool IsPathUnderRoot(string path, string root)
@@ -926,14 +668,6 @@ internal static class TailwindWorkspaceDetector
         return normalizedPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static bool PathContainsIgnoredSegment(string path)
-    {
-        var segments = path.Split(
-            [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
-            StringSplitOptions.RemoveEmptyEntries);
-        return segments.Any(IgnoredDirectories.Contains);
-    }
-
     private static string ResolvePath(string baseDirectory, string path)
     {
         return Path.IsPathRooted(path)
@@ -941,8 +675,95 @@ internal static class TailwindWorkspaceDetector
             : Path.GetFullPath(Path.Combine(baseDirectory, path));
     }
 
-    private static string TrimQuotes(string value)
+    [GeneratedRegex(@"(?:^|\s)(?:--watch|-w)(?:=\S*)?(?=\s|$)")]
+    private static partial Regex WatchFlagRegex();
+
+    [GeneratedRegex(@"\b(?:npm|pnpm|yarn)\s+run(?:-script)?\s+(?<name>[A-Za-z0-9:._-]+)")]
+    private static partial Regex ScriptReferenceRegex();
+
+    [GeneratedRegex(@"(?:^|\s)(?:-o|--output)(?:\s+|=)(?<value>""[^""]+""|'[^']+'|\S+)")]
+    private static partial Regex OutputArgumentRegex();
+}
+
+internal static class NpmCommandResolver
+{
+    public static NpmCommand Resolve(IReadOnlyList<string> npmArguments)
+        => Resolve(npmArguments, Environment.GetEnvironmentVariable("PATH"));
+
+    // npm runs through node and its JavaScript entry point when both are available, so no batch
+    // launcher sits between the backend and npm; npm still runs the script through its script shell.
+    internal static NpmCommand Resolve(IReadOnlyList<string> npmArguments, string? pathVariable)
     {
-        return value.Trim().Trim('"', '\'');
+        var npmPath = FindOnPath(pathVariable, OperatingSystem.IsWindows() ? "npm.cmd" : "npm")
+            ?? throw new InvalidOperationException("npm was not found on the backend PATH.");
+        var nodePath = FindOnPath(pathVariable, OperatingSystem.IsWindows() ? "node.exe" : "node");
+        var npmCliPath = TryResolveNpmCliScriptPath(npmPath);
+        return nodePath is not null && npmCliPath is not null
+            ? new NpmCommand(nodePath, [npmCliPath, .. npmArguments])
+            : new NpmCommand(npmPath, npmArguments);
     }
+
+    private static string? FindOnPath(string? pathVariable, string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(pathVariable))
+        {
+            return null;
+        }
+
+        foreach (var entry in pathVariable.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var directory = entry.Trim('"');
+            if (directory.Length == 0 || !Path.IsPathFullyQualified(directory))
+            {
+                continue;
+            }
+
+            var candidate = Path.Combine(directory, fileName);
+            if (File.Exists(candidate))
+            {
+                return Path.GetFullPath(candidate);
+            }
+        }
+
+        return null;
+    }
+
+    private static string? TryResolveNpmCliScriptPath(string npmPath)
+    {
+        if (IsJavaScriptFile(npmPath))
+        {
+            return npmPath;
+        }
+
+        var linkTarget = TryResolveFinalLinkTarget(npmPath);
+        if (linkTarget is not null && IsJavaScriptFile(linkTarget) && File.Exists(linkTarget))
+        {
+            return linkTarget;
+        }
+
+        var npmDirectory = Path.GetDirectoryName(npmPath) ?? string.Empty;
+        string[] candidates =
+        [
+            Path.Combine(npmDirectory, "node_modules", "npm", "bin", "npm-cli.js"),
+            Path.Combine(npmDirectory, "..", "lib", "node_modules", "npm", "bin", "npm-cli.js")
+        ];
+        return candidates
+            .Select(Path.GetFullPath)
+            .FirstOrDefault(File.Exists);
+    }
+
+    private static string? TryResolveFinalLinkTarget(string path)
+    {
+        try
+        {
+            return File.ResolveLinkTarget(path, returnFinalTarget: true)?.FullName;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    private static bool IsJavaScriptFile(string path)
+        => string.Equals(Path.GetExtension(path), ".js", StringComparison.OrdinalIgnoreCase);
 }
