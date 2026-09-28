@@ -8,6 +8,8 @@ namespace CanDoItAll.Mcp.CodeAnalytics;
 
 public interface ICodeAnalyticsCoordinator
 {
+    Task<CodeAnalyticsImpactedTestsResult> GetImpactedTestsAsync(CodeAnalyticsImpactedTestsInput request, CancellationToken cancellationToken = default);
+
     Task<SnapshotBuildResponse> BuildSnapshotAsync(CodeAnalyticsBuildSnapshotInput request, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<RecentSnapshotItem>> ListRecentSnapshotsAsync(int take, CancellationToken cancellationToken = default);
@@ -47,8 +49,9 @@ public interface ICodeAnalyticsCoordinator
     Task<FocusedContextResponse> GetFocusedContextAsync(CodeAnalyticsFocusedContextInput request, CancellationToken cancellationToken = default);
 }
 
-public sealed class CodeAnalyticsCoordinator(
+public sealed partial class CodeAnalyticsCoordinator(
     ICodeAnalyticsApplicationService applicationService,
+    ITestImpactAnalysisService testImpactAnalysisService,
     RuntimeConfiguration runtimeConfiguration)
     : ICodeAnalyticsCoordinator
 {

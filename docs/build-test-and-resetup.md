@@ -26,7 +26,8 @@ The script:
 1. verifies the required root files and local Markdown links;
 2. restores `CanDoItAll.Mcp.slnx`;
 3. builds the solution in `Release`;
-4. runs the Components, DotNetWatch, Mermaid, and SshOps stable test projects.
+4. runs the CodeAnalytics, Components, DotNetWatch, Mermaid, and SshOps stable test
+   projects.
 
 The command creates normal ignored .NET output under `bin` and `obj`. Preview the
 external-tool work without changing build output:
@@ -64,35 +65,34 @@ when those prerequisites are available:
 Run the integration project without its filter only when live-process, long-running, and
 quarantined scenarios are explicitly part of the task.
 
-## Machine Resetup
+## CodeAnalytics MCP Installation
 
-From this repository root, enter the sibling main repository and invoke its owned resetup
-entry point:
+The main repository owns the installed CodeAnalytics MCP artifact. Publish and validate a
+staged artifact, then switch it into the stable `current` path with its focused installer:
 
 ```powershell
 Push-Location ..\CanDoItAll
 try {
-    & .\tools\Reinstall-CanDoItAllMcps.ps1 -McpRepoRoot ..\CanDoItAll.Mcp
+    & .\tools\install\Install-CanDoItAllCodeAnalyticsMcp.ps1 `
+        -McpRepositoryRoot ..\CanDoItAll.Mcp `
+        -SmokeRequestPath <path-to-test-impact-request.json>
 }
 finally {
     Pop-Location
 }
 ```
 
-The resetup workflow:
+The installer:
 
-- builds the DotNetWatch shadow host from this repository;
-- publishes Components, CodeAnalytics, Mermaid, SshOps, and the DotNetWatch tray from
-  this repository;
-- publishes `CanDoItAll.Manager` from the main repository because it is not an MCP
-  server;
-- updates the main repository's `.vscode\mcp.json` and the user's Codex configuration;
-- syncs repository-owned skills;
-- recreates current MCP install and shadow artifacts under the main repository's ignored
-  `.artifacts` directory.
+- publishes from the MCP repository into a unique staging directory;
+- lists tools and invokes `code_analytics_impacted_tests_get` against the staged server;
+- stops only processes executing the exact owned `current` entry point;
+- retains the prior install in a timestamped backup and switches the staged directory;
+- repeats the protocol smoke against `current` and rolls back if it fails.
 
-Resetup changes machine configuration and local install artifacts. Review its parameters
-in the owning repository before running it.
+The stable configured entry-point path does not change. Run with `-WhatIf` to preview the
+installation without publishing, stopping processes, or changing artifacts. A connected
+MCP client may need to reconnect before it discovers a newly added tool schema.
 
 ## Manual DotNetWatch Shadow Rebuild
 

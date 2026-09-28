@@ -28,6 +28,7 @@ $requiredFiles = @(
 )
 
 $stableTestProjects = @(
+    "tests\CanDoItAll.Mcp.CodeAnalytics.Tests\CanDoItAll.Mcp.CodeAnalytics.Tests.csproj",
     "tests\CanDoItAll.Mcp.Components.Tests\CanDoItAll.Mcp.Components.Tests.csproj",
     "tests\CanDoItAll.Mcp.DotNetWatch.Tests\CanDoItAll.Mcp.DotNetWatch.Tests.csproj",
     "tests\CanDoItAll.Mcp.Mermaid.Tests\CanDoItAll.Mcp.Mermaid.Tests.csproj",

@@ -6,7 +6,7 @@
 | --- | --- | --- | --- |
 | `candoitall_dotnetwatch` | `src/CanDoItAll.Mcp.DotNetWatch` | Shadow host under `CanDoItAll\.artifacts\mcp-server-shadow` | Launched through `tools\CanDoItAll.Mcp.DotNetWatch\Start-CanDoItAllDotNetWatchMcp.ps1`; settings stay in the main CanDoItAll repo. |
 | `candoitall_components` | `src/CanDoItAll.Mcp.Components` | `CanDoItAll\.artifacts\mcp-installs\CanDoItAll.Mcp.Components\current` | Indexes all non-WebGL Components libraries (BaseLib, CanvasLib, Charts, Common, Mermaid, OverlayLib, QRCode, and sandbox proof); provides library/setup inventory, app-shell/menu guidance, scenario recommendations, component details, CSS notes, and examples. |
-| `candoitall_codeanalytics` | `src/CanDoItAll.Mcp.CodeAnalytics` | `CanDoItAll\.artifacts\mcp-installs\CanDoItAll.Mcp.CodeAnalytics\current` | Uses the sibling CodeAnalytics libraries and has no dependency on the main CanDoItAll app projects. |
+| `candoitall_codeanalytics` | `src/CanDoItAll.Mcp.CodeAnalytics` | `CanDoItAll\.artifacts\mcp-installs\CanDoItAll.Mcp.CodeAnalytics\current` | Uses sibling CodeAnalytics source projects and has no dependency on main application projects. In addition to architecture and symbol inspection, it selects impacted tests from explicit production and test workspaces while reporting containment and uncertainty. |
 | `candoitall_mermaid` | `src/CanDoItAll.Mcp.Mermaid` | `CanDoItAll\.artifacts\mcp-installs\CanDoItAll.Mcp.Mermaid\current` | Provides Mermaid syntax/catalog tooling through settings in the main repo. |
 | `candoitall_sshops` | `src/CanDoItAll.Mcp.SshOps` | `CanDoItAll\.artifacts\mcp-installs\CanDoItAll.Mcp.SshOps\current` | Uses settings from `CanDoItAll.Mcp.SshOps.settings.json` in the main repo. |
 
