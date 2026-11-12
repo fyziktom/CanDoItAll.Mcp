@@ -192,7 +192,8 @@ public sealed partial class ComponentCatalogService
         ],
         ["Charts"] =
         [
-            "Charts components render ApexCharts through the wrapper assets exposed by `<ChartsHeadAssets />`.",
+            "Charts components need `<ChartsHeadAssets />` for Apex CSS and `<ChartsBodyAssets />` before Blazor starts for semantic token resolution and runtime theme updates.",
+            "Keep `IncludeThemeTokens=true` unless an earlier asset component already loads BaseLib's shared theme script; omitting the chart body assets leaves chart text and grid colors disconnected from the application theme.",
             "Consumers should use CanDoItAll chart models and `CdaChart` instead of raw Apex component markup."
         ],
         ["Mermaid"] =
@@ -501,6 +502,7 @@ public sealed partial class ComponentCatalogService
         ["EmptyStateOverlay"] = "Shared CanvasLib empty-state overlay for graph and canvas surfaces with no active content.",
         ["CdaChart"] = "Shared Charts wrapper for Apex-backed line, area, bar, pie, and donut charts using CanDoItAll-owned series, point, option, and palette models.",
         ["ChartsHeadAssets"] = "Shared Charts asset component that adds the ApexCharts stylesheet required by the CanDoItAll chart wrapper.",
+        ["ChartsBodyAssets"] = "Shared Charts asset component that loads BaseLib theme tokens and the chart theme bridge for initial colors and runtime theme updates.",
         ["MermaidDiagram"] = "CanDoItAll Mermaid.js wrapper that renders official Mermaid diagrams with Blazor callbacks for node clicks, pan/zoom controls, and normalized syntax diagnostics."
         ,
         ["OverlayWindow"] = "Generic OverlayLib floating-window runtime for bounded placement, drag, resize, minimize, reset, hide, and show behavior backed by `OverlayWindowState`.",
@@ -788,6 +790,10 @@ public sealed partial class ComponentCatalogService
         ["ChartsHeadAssets"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             ["Href"] = "Stylesheet path for ApexCharts CSS; keep the default unless the external chart asset path changes."
+        },
+        ["ChartsBodyAssets"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["IncludeThemeTokens"] = "Loads BaseLib's shared theme script before the chart theme bridge. Keep the default true unless an earlier asset component already loads it; the chart-specific bridge is always required."
         },
         ["MermaidDiagram"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -1513,9 +1519,10 @@ public sealed partial class ComponentCatalogService
                 "Decorative chart chrome or direct use of raw Apex component markup in consuming pages."
             ],
             [
-                "Use `AddCanDoItAllCharts()` and `<ChartsHeadAssets />` in the host before rendering charts.",
+                "Use `AddCanDoItAllCharts()`, mount `<ChartsHeadAssets />` in the head, and mount `<ChartsBodyAssets />` once before Blazor starts.",
+                "Set `ChartsBodyAssets IncludeThemeTokens=false` only when an earlier body-assets component already loads BaseLib's shared theme script; the chart theme bridge must still load.",
                 "Build data with `CdaChartSeries`, `CdaChartPoint`, and `CdaChartOptions` so future renderer swaps stay localized.",
-                "Validate chart routes with browser assertions and screenshots because build success cannot prove nonblank Apex SVG output."
+                "Validate chart routes with browser assertions and screenshots because build success cannot prove nonblank Apex SVG output. Check legends, axis labels, grid lines, and tooltips in both theme-switching directions on the mounted chart."
             ]),
         ["Mermaid"] = new(
             [

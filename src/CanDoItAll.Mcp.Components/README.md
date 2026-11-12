@@ -83,6 +83,8 @@ Tabs use `TabsDensity` and `TabsRounded` instead of `TabsVariant`. `NoContent` s
 
 Overlay windows and toolboxes consume `--ui-overlay-*` colors. BaseLib resolves their neutral aliases and `--ui-overlay-{info,secondary,success,warning,danger}-{bg,fg,border}` status tokens at each theme boundary; standalone OverlayLib styles retain literal defaults when BaseLib styles are absent. Override status colors as a matching set. Checkboxes use `--ui-checkbox-checkmark` and `--ui-checkbox-indeterminate` image tokens for their light and dark glyphs, including document-root theme boundaries.
 
+Charts require `AddCanDoItAllCharts()`, `ChartsHeadAssets` in the head, and `ChartsBodyAssets` once before Blazor starts. The body assets load BaseLib's shared theme script followed by the chart-specific theme bridge. Set `IncludeThemeTokens="false"` only when an earlier body-assets component, such as `CanvasLibBodyAssets`, already loads the shared script. Verify the mounted chart's legends, axes, grid lines, and tooltips after switching light to dark and back; the stylesheet alone does not connect chart colors to the application theme.
+
 Choose content-aware sizes rather than universal large defaults:
 
 - `TextAreaInput Size="TextAreaSize.Compact"` for short comments, `Standard` for ordinary descriptions, and `Extended` for substantial prose; use `Rows` only as a deliberate override.

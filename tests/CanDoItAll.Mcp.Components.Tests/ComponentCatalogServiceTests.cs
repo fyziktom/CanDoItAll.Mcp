@@ -1,3 +1,4 @@
+using CanDoItAll.Components.Charts;
 using CanDoItAll.Mcp.Components.Catalog;
 using CanDoItAll.Mcp.Components.Configuration;
 using CanDoItAll.Mcp.Core.Contracts;
@@ -128,6 +129,12 @@ public sealed class ComponentCatalogServiceTests
         var component = service.GetComponent("CdaChart");
         var examples = service.GetExamples("CdaChart");
         var css = service.GetCssTokens("CdaChart");
+        var library = Assert.Single(service.GetLibraries(), library => library.Name == "Charts");
+        var recommendation = service.RecommendComponents("operational line chart");
+
+        Assert.Contains(library.HeadAssets, asset => asset.Contains(nameof(ChartsHeadAssets), StringComparison.Ordinal));
+        Assert.Contains(library.BodyAssets, asset => asset.Contains(nameof(ChartsBodyAssets), StringComparison.Ordinal));
+        Assert.Contains(recommendation.Recommendations, item => item.Name == nameof(ChartsBodyAssets));
 
         Assert.Equal("Charts", component.Library);
         Assert.Equal("CanDoItAll.Components.Charts", component.Namespace);
@@ -136,6 +143,7 @@ public sealed class ComponentCatalogServiceTests
         Assert.Contains(component.GroupKeys, key => string.Equals(key, "charts", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(component.CssNotes, note => note.Contains("raw Apex component markup", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(component.Guidance.CompositionRules, rule => rule.Contains("AddCanDoItAllCharts", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(component.Guidance.CompositionRules, rule => rule.Contains(nameof(ChartsBodyAssets), StringComparison.Ordinal));
         Assert.Contains(component.Guidance.CompositionRules, rule => rule.Contains("browser assertions", StringComparison.OrdinalIgnoreCase));
 
         var seriesParameter = Assert.Single(component.Parameters, parameter => string.Equals(parameter.Name, "Series", StringComparison.OrdinalIgnoreCase));
