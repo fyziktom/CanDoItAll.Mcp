@@ -1406,7 +1406,20 @@ public sealed partial class ComponentCatalogService
             ],
             [
                 "Load `<OverlayLibHeadAssets />` and `<OverlayLibBodyAssets />` once, then use controlled `OverlayWindowState` plus `StateChanged` to persist state.",
-                "Set `ContainerSelector` and `SafeTopSelector` for the consumer's actual host; CanvasLib already loads these assets when its generated asset components are present."
+                "Set `ContainerSelector` and `SafeTopSelector` for the consumer's actual host; CanvasLib already loads these assets when its generated asset components are present.",
+                "Persist state within the consuming view's current lifetime. Component disposal releases browser resources and callback references; it does not authorize writes after the view retires.",
+                "Disposal tolerates cancellation from the retiring JavaScript bridge. Errors from active initialization, updates, and consumer callbacks remain observable."
+            ]),
+        ["AccessibilityMirrorLayer"] = new(
+            [
+                "Assistive navigation and live announcements for CanvasLib workbench and calendar scenes."
+            ],
+            [
+                "A second accessibility layer beside the mirror already rendered by `CanvasWorkbench` or `CanvasCalendar`."
+            ],
+            [
+                "The owning canvas surface supplies the typed `AccessibilityMirrorSnapshot`; keep application state and persistence in that owner.",
+                "Disposal retires the browser mirror once and tolerates teardown cancellation. Active create and update failures remain observable."
             ]),
         ["OverlayComponentToolbox"] = new(
             [
