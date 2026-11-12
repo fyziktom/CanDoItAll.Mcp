@@ -5,6 +5,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>CanDoItAll.Mcp.Components</AssemblyName>
     <RootNamespace>CanDoItAll.Mcp.Components</RootNamespace>
+    <UseLocalCanDoItAllLibraries Condition="'$(UseLocalCanDoItAllLibraries)' == ''">false</UseLocalCanDoItAllLibraries>
+    <CanDoItAllComponentsRoot Condition="'$(CanDoItAllComponentsRoot)' == ''">$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', '..', '..', 'CanDoItAll.Components'))</CanDoItAllComponentsRoot>
+    <CanDoItAllComponentsRoot>$([MSBuild]::NormalizeDirectory('$(CanDoItAllComponentsRoot)'))</CanDoItAllComponentsRoot>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,7 +15,7 @@
     <PackageReference Include="ModelContextProtocol" Version="1.4.1" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(UseLocalCanDoItAllLibraries)' != 'true'">
     <PackageReference Include="CanDoItAll.Components.BaseLib" Version="0.1.17" />
     <PackageReference Include="CanDoItAll.Components.CanvasLib" Version="0.1.17" />
     <PackageReference Include="CanDoItAll.Components.Charts" Version="0.1.17" />
@@ -21,6 +24,20 @@
     <PackageReference Include="CanDoItAll.Components.OverlayLib" Version="0.1.17" />
     <PackageReference Include="CanDoItAll.Components.QRCode" Version="0.1.17" />
     <PackageReference Include="CanDoItAll.Components.Sandbox" Version="0.1.17" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseLocalCanDoItAllLibraries)' == 'true'">
+    <ProjectReference Include="$(CanDoItAllComponentsRoot)src/CanDoItAll.Components.BaseLib/CanDoItAll.Components.BaseLib.csproj" />
+    <ProjectReference Include="$(CanDoItAllComponentsRoot)src/CanDoItAll.Components.CanvasLib/CanDoItAll.Components.CanvasLib.csproj" />
+    <ProjectReference Include="$(CanDoItAllComponentsRoot)src/CanDoItAll.Components.Charts/CanDoItAll.Components.Charts.csproj" />
+    <ProjectReference Include="$(CanDoItAllComponentsRoot)src/CanDoItAll.Components.Common/CanDoItAll.Components.Common.csproj" />
+    <ProjectReference Include="$(CanDoItAllComponentsRoot)src/CanDoItAll.Components.Mermaid/CanDoItAll.Components.Mermaid.csproj" />
+    <ProjectReference Include="$(CanDoItAllComponentsRoot)src/CanDoItAll.Components.OverlayLib/CanDoItAll.Components.OverlayLib.csproj" />
+    <ProjectReference Include="$(CanDoItAllComponentsRoot)src/CanDoItAll.Components.QRCode/CanDoItAll.Components.QRCode.csproj" />
+    <ProjectReference Include="$(CanDoItAllComponentsRoot)samples/CanDoItAll.Components.Sandbox.Catalog/CanDoItAll.Components.Sandbox.Catalog.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\CanDoItAll.Mcp.Core\CanDoItAll.Mcp.Core.csproj" />
   </ItemGroup>
 

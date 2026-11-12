@@ -68,10 +68,18 @@ public sealed class ComponentsMcpProtocolTests
             var compactRecommendation = await client.CallToolAsync(
                 "components_recommend",
                 new Dictionary<string, object?> { ["useCase"] = "compact operational page with supporting metrics above an item list" });
+            var textArea = await client.CallToolAsync(
+                "component_get",
+                new Dictionary<string, object?> { ["component"] = "TextAreaInput" });
+            var avatarRecommendation = await client.CallToolAsync(
+                "components_recommend",
+                new Dictionary<string, object?> { ["useCase"] = "agent colleague avatar with human portrait and optional robot identity" });
 
             Assert.False(appShell.IsError is true);
             Assert.False(recommendation.IsError is true);
             Assert.False(compactRecommendation.IsError is true);
+            Assert.False(textArea.IsError is true);
+            Assert.False(avatarRecommendation.IsError is true);
             var appShellOutput = appShell.StructuredContent is JsonElement appShellStructuredContent
                 ? appShellStructuredContent.GetRawText()
                 : JsonSerializer.Serialize(appShell.Content);
@@ -87,6 +95,12 @@ public sealed class ComponentsMcpProtocolTests
             Assert.Contains("CompactStatStrip", compactRecommendationOutput, StringComparison.Ordinal);
             Assert.Contains("compositionRules", compactRecommendationOutput, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("primary task", compactRecommendationOutput, StringComparison.OrdinalIgnoreCase);
+            var textAreaOutput = JsonSerializer.Serialize(textArea.StructuredContent);
+            var avatarOutput = JsonSerializer.Serialize(avatarRecommendation.StructuredContent);
+            Assert.Contains("TextAreaInput", textAreaOutput, StringComparison.Ordinal);
+            Assert.Contains("ValueExpression", textAreaOutput, StringComparison.Ordinal);
+            Assert.Contains("human portrait", avatarOutput, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("RoboAvatar", avatarOutput, StringComparison.Ordinal);
         }
         finally
         {

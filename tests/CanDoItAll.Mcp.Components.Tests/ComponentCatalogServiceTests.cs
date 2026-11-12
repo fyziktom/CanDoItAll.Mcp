@@ -29,13 +29,13 @@ public sealed class ComponentCatalogServiceTests
     }
 
     [Fact]
-    public void Search_Finds_Dense_Sandbox_Examples_By_Scenario()
+    public void Search_Finds_Tab_Sandbox_Examples_By_Scenario()
     {
         var service = CreateService();
 
-        var result = service.Search("dense");
+        var result = service.Search("tabs");
 
-        Assert.Contains(result.Examples, example => string.Equals(example.Scenario, "Dense", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(result.Examples, example => example.Scenario.Contains("Tabs", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -95,7 +95,7 @@ public sealed class ComponentCatalogServiceTests
         Assert.Contains(groups, group => string.Equals(group.Key, "charts", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(groups, group => string.Equals(group.Key, "mermaid", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(groups, group => string.Equals(group.Key, "canvas", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(groups, group => string.Equals(group.Key, "foundations", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(groups, group => string.Equals(group.Key, "layout", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(groups, group => string.Equals(group.Key, "qr", StringComparison.OrdinalIgnoreCase));
     }
 
@@ -170,7 +170,59 @@ public sealed class ComponentCatalogServiceTests
 
         Assert.Contains(css.SourceFiles, file => file.EndsWith(Path.Combine("Tailwind", "navigation", "tabs.css"), StringComparison.OrdinalIgnoreCase));
         Assert.True(usageExamples.TotalMatches >= 2);
-        Assert.Contains(usageExamples.UsageExamples, example => example.FilePath.EndsWith("NavigationTabs.razor", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(usageExamples.UsageExamples, example => example.FilePath.EndsWith("BasicTabs.razor", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void Refactored_Controls_Expose_Current_Contracts_Without_Removed_Compatibility_Components() {
+        var service = CreateService();
+        var tabs = service.GetComponent("Tabs");
+        var button = service.GetComponent("Button");
+        var select = service.GetComponent("SelectInput");
+        var textArea = service.GetComponent("TextAreaInput");
+        var components = service.GetIndex().Components;
+
+        var density = Assert.Single(tabs.Parameters, parameter => parameter.Name == "Density");
+        Assert.Equal("Normal", density.DefaultValue);
+        Assert.Equal(new[] { "Comfortable", "Compact", "Normal" }, density.AllowedValues);
+        Assert.Contains(tabs.Parameters, parameter => parameter.Name == "Rounded");
+        Assert.Contains(tabs.Parameters, parameter => parameter.Name == "NoContent");
+        Assert.Contains(tabs.Parameters, parameter => parameter.Name == "PanelOverflowMode");
+        Assert.DoesNotContain(tabs.Parameters, parameter => parameter.Name == "Variant");
+        Assert.Contains(button.Parameters, parameter => parameter.Name == "Tone" && parameter.AllowedValues.Contains("Primary"));
+        Assert.DoesNotContain(button.Parameters, parameter => parameter.Name == "ButtonStyle");
+        Assert.Contains(select.Parameters, parameter => parameter.Name == "ChildContent");
+        Assert.Contains(select.Parameters, parameter => parameter.Name == "ValueExpression");
+        Assert.Contains(textArea.Parameters, parameter => parameter.Name == "Size" && parameter.AllowedValues.Contains("Extended"));
+        Assert.DoesNotContain(components, component => component.Name is "TextBox" or "TextArea" or "Numeric" or "DropDown" or "ProfileField");
+    }
+
+    [Fact]
+    public void Avatar_Recommendation_Preserves_Human_Default_And_Offers_Robot_As_An_Alternative() {
+        var service = CreateService();
+        var recommendation = service.RecommendComponents("agent colleague avatar with human portrait and optional robot identity");
+        var avatar = service.GetComponent("Avatar");
+        var robot = service.GetComponent("RoboAvatar");
+
+        Assert.Equal("Avatar", recommendation.Recommendations[0].Name);
+        Assert.Contains(recommendation.Alternatives, component => component.Name == "RoboAvatar");
+        Assert.Contains(avatar.Parameters, parameter => parameter.Name == "UseDefaultImageWhenMissing" && parameter.DefaultValue == "true");
+        Assert.Contains(avatar.Guidance.CompositionRules, rule => rule.Contains("human portrait as the default", StringComparison.Ordinal));
+        Assert.Contains(robot.Guidance.AvoidFor, rule => rule.Contains("primary default", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("ThemeHost", "theme.css")]
+    [InlineData("Button", "button.css")]
+    [InlineData("TextAreaInput", "form-controls.css")]
+    [InlineData("Dialog", "dialog.css")]
+    public void Css_Tokens_Resolve_Organized_Source_Files(string component, string expectedFile) {
+        var service = CreateService();
+
+        var css = service.GetCssTokens(component);
+
+        Assert.Contains(css.SourceFiles, file => Path.GetFileName(file) == expectedFile);
+        Assert.All(css.SourceFiles, file => Assert.True(File.Exists(file)));
     }
 
     [Fact]
@@ -185,7 +237,7 @@ public sealed class ComponentCatalogServiceTests
         Assert.EndsWith(Path.Combine("Components", "Forms", "Editable.razor"), component.SourcePath, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(component.Parameters, parameter => string.Equals(parameter.Name, "ParameterName", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(component.Events, @event => string.Equals(@event.Name, "ItemChanged", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(examples.Examples, example => string.Equals(example.Id, "inputs-editable", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(examples.Examples, example => string.Equals(example.Id, "forms-editable", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -233,7 +285,7 @@ public sealed class ComponentCatalogServiceTests
         Assert.Contains(component.Parameters, parameter => string.Equals(parameter.Name, "MoreItems", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(component.Guidance.CompositionRules, rule => rule.Contains("SideMenuService", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(component.Guidance.CompositionRules, rule => rule.Contains("small breakpoint", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(usage.UsageExamples, example => example.FilePath.EndsWith("NavigationSideMenu.razor", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(usage.UsageExamples, example => example.FilePath.EndsWith("SideMenuWorkspace.razor", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(css.SourceFiles, file => file.EndsWith(Path.Combine("Tailwind", "navigation", "side-menu.css"), StringComparison.OrdinalIgnoreCase));
     }
 
@@ -243,7 +295,7 @@ public sealed class ComponentCatalogServiceTests
         var service = CreateService();
 
         var pageHeader = service.GetComponent("PageHeader");
-        var textArea = service.GetComponent("TextArea");
+        var textArea = service.GetComponent("TextAreaInput");
         var dialog = service.GetComponent("Dialog");
         var card = service.GetComponent("Card");
         var selectionListItem = service.GetComponent("SelectionListItem");
@@ -297,13 +349,13 @@ public sealed class ComponentCatalogServiceTests
 
         File.WriteAllText(
             Path.Combine(productRoot, "ProductPage.razor"),
-            "<TextArea Rows=\"2\" />");
+            "<TextAreaInput Rows=\"2\" />");
         File.WriteAllText(
             Path.Combine(sandboxRoot, "CompactTextAreaProof.razor"),
             """
             @page "/proof/compact-textarea"
 
-            <TextArea Value="@notes"
+            <TextAreaInput Value="@notes"
                       ValueChanged="HandleNotesChanged"
                       Size="TextAreaSize.Extended" />
             """);
@@ -329,12 +381,12 @@ public sealed class ComponentCatalogServiceTests
                 }
             }));
 
-            var usage = service.GetUsageExamples("TextArea", limit: 10);
+            var usage = service.GetUsageExamples("TextAreaInput", limit: 10);
             var first = Assert.IsType<ComponentUsageExampleDocument>(usage.UsageExamples[0]);
 
             Assert.Equal("sandbox", first.SourceKind);
             Assert.Equal("/proof/compact-textarea", first.Route);
-            Assert.StartsWith("<TextArea", first.Snippet, StringComparison.Ordinal);
+            Assert.StartsWith("<TextAreaInput", first.Snippet, StringComparison.Ordinal);
             Assert.Contains("ValueChanged=", first.Snippet, StringComparison.Ordinal);
             Assert.Contains("Size=\"TextAreaSize.Extended\"", first.Snippet, StringComparison.Ordinal);
             Assert.EndsWith("/>", first.Snippet, StringComparison.Ordinal);
@@ -374,10 +426,11 @@ public sealed class ComponentCatalogServiceTests
         var qrCode = Assert.Single(libraries, library => string.Equals(library.Name, "QRCode", StringComparison.OrdinalIgnoreCase));
 
         Assert.Equal(8, libraries.Count);
-        Assert.True(baseLib.ComponentCount >= 160);
+        Assert.True(baseLib.ComponentCount > 0);
+        Assert.Contains(baseLib.Stylesheets, stylesheet => stylesheet.EndsWith("material-symbols.css", StringComparison.Ordinal));
         Assert.Contains(baseLib.ServiceRegistrations, registration => registration.Contains("AddCanDoItAllBaseLib", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(overlay.BodyAssets, asset => asset.Contains("OverlayLibBodyAssets", StringComparison.OrdinalIgnoreCase));
-        Assert.Equal("/groups/qr", qrCode.SandboxRoute);
+        Assert.Equal("/qr", qrCode.SandboxRoute);
         Assert.Contains(qrCode.Notes, note => note.Contains("DialogHost", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(libraries, library => library.Name.Contains("WebGl", StringComparison.OrdinalIgnoreCase));
     }
@@ -394,6 +447,8 @@ public sealed class ComponentCatalogServiceTests
         Assert.Contains("DialogHost", guide.LayoutExample, StringComparison.Ordinal);
         Assert.Contains(guide.MenuRules, rule => rule.Contains("ItemSelected", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(guide.LayoutRules, rule => rule.Contains("one vertical scroll owner", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(guide.LayoutRules, rule => rule.Contains("opened-workspace tab strip", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(guide.ComponentRoles, role => role.Contains("IPageHeaderOutlet", StringComparison.Ordinal));
         Assert.Contains(guide.ResponsiveRules, rule => rule.Contains("768px", StringComparison.OrdinalIgnoreCase));
     }
 

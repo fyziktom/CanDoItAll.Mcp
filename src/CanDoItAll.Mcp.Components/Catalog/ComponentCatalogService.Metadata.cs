@@ -20,12 +20,12 @@ public sealed partial class ComponentCatalogService
         ["Button"] =
         [
             "Uses the shared BaseLib button variants, sizes, and tones from `_content/CanDoItAll.Components.BaseLib/css/output.css`.",
-            "Prefer `ButtonStyle`, `Variant`, and `Size` before adding page-local button styling."
+            "Prefer `Tone` (`ButtonTone`), `Variant`, `Size`, `Density`, and `Rounded` before adding page-local button styling."
         ],
         ["CopyButton"] =
         [
             "Uses the shared BaseLib button and inline icon-copy styles from `_content/CanDoItAll.Components.BaseLib/css/output.css`.",
-            "Prefer `DisplayMode`, `Size`, `ButtonStyle`, and `Variant` before adding page-local copy affordances or custom clipboard handlers."
+            "Prefer `DisplayMode`, `Size`, `Tone`, and `Variant` before adding page-local copy affordances or custom clipboard handlers."
         ],
         ["PageScaffold"] =
         [
@@ -37,7 +37,7 @@ public sealed partial class ComponentCatalogService
             "Uses the shared compact header rhythm from `_content/CanDoItAll.Components.BaseLib/css/output.css`.",
             "Prefer `Compact`, `Stats`, and `Actions` before adding a second hero, stat-card row, or page-local header wrapper."
         ],
-        ["TextArea"] =
+        ["TextAreaInput"] =
         [
             "Uses content-aware semantic heights from the BaseLib form styles instead of one large minimum height.",
             "Prefer `Size` for expected content length and use `Rows` only as a deliberate override."
@@ -70,7 +70,8 @@ public sealed partial class ComponentCatalogService
         ["Tabs"] =
         [
             "Uses the shared Tailwind-owned `cad-tabs` styles from `_content/CanDoItAll.Components.BaseLib/css/output.css`; it should not depend on legacy `zy-*` selectors.",
-            "Prefer `Variant`, `Tone`, `BorderMode`, and `OverflowMode` before page-local styling, then use the root `Class` parameter only for shell-level atmosphere."
+            "Use `Density`, `Rounded`, `ContentRounded`, `Tone`, `BorderMode`, and `OverflowMode`; `TabsVariant` is no longer part of the refactored contract.",
+            "Use `NoContent` for a navigation-only strip, `NoSlider` only when the active indicator is deliberately unnecessary, and `PanelOverflowMode` to name the content scroll owner."
         ],
         ["SecondaryTabs"] =
         [
@@ -106,7 +107,7 @@ public sealed partial class ComponentCatalogService
         ],
         ["Layout"] =
         [
-            "Uses the BaseLib `rz-layout` compatibility contract from `Tailwind/foundation/radzen-layout.css`.",
+            "Uses the BaseLib application-frame styles from `Tailwind/layout/layout.css`.",
             "Use `FitViewport`, `ViewportOffset`, and `LockOverflow` to establish one deliberate shell-level scroll model."
         ],
         ["DataGrid"] =
@@ -203,34 +204,35 @@ public sealed partial class ComponentCatalogService
         ["RibbonTabs"] = [@"Tailwind\navigation\tabs.css"],
         ["PageHeader"] = [@"Tailwind\navigation\page-header.css"],
         ["FilterBar"] = [@"Tailwind\navigation\page-header.css"],
-        ["TreeView"] = [@"Tailwind\navigation\treeview.css"],
-        ["TreeViewNodeRow"] = [@"Tailwind\navigation\treeview.css"],
+        ["TreeView"] = [@"Tailwind\navigation\tree-view.css"],
+        ["TreeViewNodeRow"] = [@"Tailwind\navigation\tree-view.css"],
         ["SideMenu"] = [@"Tailwind\navigation\side-menu.css"],
         ["SideMenuItem"] = [@"Tailwind\navigation\side-menu.css"],
-        ["Layout"] = [@"Tailwind\foundation\radzen-layout.css"],
-        ["Sidebar"] = [@"Tailwind\foundation\radzen-layout.css"],
-        ["Body"] = [@"Tailwind\foundation\radzen-layout.css"],
-        ["ThemeHost"] = [@"Tailwind\foundation\theme.css"],
+        ["Layout"] = [@"Tailwind\layout\layout.css"],
+        ["Sidebar"] = [@"Tailwind\layout\sidebar.css"],
+        ["Body"] = [@"Tailwind\layout\body.css"],
+        ["ThemeHost"] = [@"Tailwind\theme.css", @"Tailwind\layout\theme-host.css"],
+        ["TextInput"] = [@"Tailwind\forms\styled-input-base.css", @"Tailwind\forms\form-controls.css"],
+        ["TextAreaInput"] = [@"Tailwind\forms\styled-input-base.css", @"Tailwind\forms\form-controls.css"],
+        ["NumberInput"] = [@"Tailwind\forms\styled-input-base.css", @"Tailwind\forms\form-controls.css"],
+        ["SelectInput"] = [@"Tailwind\forms\styled-input-base.css", @"Tailwind\forms\form-controls.css"],
         ["TagEditor"] = [@"Tailwind\forms\tag-editor.css"],
-        ["Button"] = [@"Tailwind\controls\buttons.css"],
-        ["CopyButton"] = [@"Tailwind\controls\buttons.css"],
-        ["Badge"] = [@"Tailwind\controls\badges.css"],
-        ["BadgesGroup"] = [@"Tailwind\controls\badges.css"],
-        ["Chip"] = [@"Tailwind\controls\badges.css"],
-        ["ChipRow"] = [@"Tailwind\controls\badges.css"],
-        ["Pill"] = [@"Tailwind\controls\badges.css"],
-        ["PillList"] = [@"Tailwind\controls\badges.css"],
-        ["StatusBadge"] = [@"Tailwind\controls\badges.css"],
-        ["Alert"] = [@"Tailwind\feedback\alerts.css"],
-        ["Callout"] = [@"Tailwind\feedback\alerts.css"],
-        ["EmptyState"] = [@"Tailwind\feedback\alerts.css"],
-        ["LoadingState"] = [@"Tailwind\feedback\alerts.css"],
-        ["Notification"] = [@"Tailwind\feedback\alerts.css"],
-        ["HelpPopover"] = [@"src\CanDoItAll.Components.BaseLib\Components\Feedback\HelpPopover.razor.css"],
+        ["Button"] = [@"Tailwind\buttons\button.css"],
+        ["CopyButton"] = [@"Tailwind\buttons\button.css", @"Tailwind\buttons\copy-button.css"],
+        ["Badge"] = [@"Tailwind\badges\badge.css"],
+        ["BadgesGroup"] = [@"Tailwind\badges\badge.css"],
+        ["Chip"] = [@"Tailwind\badges\badge.css"],
+        ["ChipRow"] = [@"Tailwind\badges\badge.css"],
+        ["Pill"] = [@"Tailwind\badges\pill.css"],
+        ["PillList"] = [@"Tailwind\badges\pill.css"],
+        ["StatusBadge"] = [@"Tailwind\badges\status-badge.css"],
+        ["Alert"] = [@"Tailwind\feedback\alert.css"],
+        ["HelpPopover"] = [@"Tailwind\feedback\help-popover.css"],
+        ["HelpCard"] = [@"Tailwind\feedback\help-card.css"],
         ["Tooltip"] = [],
         ["TooltipTarget"] = [],
-        ["Dialog"] = [@"Tailwind\modals\dialogs.css"],
-        ["DialogScaffold"] = [@"Tailwind\modals\dialogs.css"]
+        ["Dialog"] = [@"Tailwind\modals\dialog.css"],
+        ["DialogScaffold"] = [@"Tailwind\modals\dialog-scaffold.css"]
     };
     private static readonly IReadOnlyDictionary<string, ComponentGuidanceDocument> GuidanceByFamily = new Dictionary<string, ComponentGuidanceDocument>(StringComparer.OrdinalIgnoreCase)
     {
@@ -461,9 +463,13 @@ public sealed partial class ComponentCatalogService
         ["Tooltip"] = "Shared BaseLib tooltip host for service-triggered contextual help with side, corner, and edge-aligned placement options.",
         ["TooltipTarget"] = "Shared BaseLib tooltip trigger wrapper for hover and focus help that can choose a local TooltipPosition without page-level tooltip plumbing.",
         ["FormField"] = "Shared BaseLib form-field wrapper for label, helper, validation, and control alignment.",
-        ["TextBox"] = "Shared BaseLib text input component for standard single-line entry flows.",
-        ["TextArea"] = "Shared BaseLib multiline input with semantic compact, standard, and extended heights selected from expected content length.",
-        ["DropDown"] = "Shared BaseLib selection input component for shared option picking flows.",
+        ["TextInput"] = "Shared BaseLib text input component for standard single-line entry flows.",
+        ["TextAreaInput"] = "Shared BaseLib multiline input with semantic compact, standard, and extended heights selected from expected content length.",
+        ["NumberInput"] = "Typed BaseLib numeric input with InputBase validation and invariant value parsing.",
+        ["SelectInput"] = "Typed BaseLib selection input with explicit option child content and InputBase validation.",
+        ["Avatar"] = "Person-oriented identity image with a deterministic bundled human portrait when no explicit image is supplied.",
+        ["HomoAvatar"] = "Deterministic generated human-style SVG avatar for an explicitly selected illustrated identity.",
+        ["RoboAvatar"] = "Optional deterministic robot-style SVG avatar; use it only when the user selects the robot identity style.",
         ["Card"] = "Shared BaseLib item surface with optional media, header, tags, body, and action slots for consistent card anatomy.",
         ["CardGrid"] = "Shared BaseLib responsive collection for peer visual cards with compact, consistent gaps.",
         ["CompactStat"] = "Shared BaseLib compact label/value pair for a short supporting metric without card-sized chrome.",
@@ -570,7 +576,13 @@ public sealed partial class ComponentCatalogService
         ["ContextMenu"] = ["context-menu", "keyboard", "viewport-placement", "actions"],
         ["Dialog"] = ["dialog", "modal", "focus", "viewport", "overlay-service"],
         ["PageHeader"] = ["compact-ui", "page-title", "header-actions", "supporting-stats", "reduce-scroll"],
-        ["TextArea"] = ["form", "multiline", "content-aware-size", "compact-ui", "long-text"],
+        ["TextAreaInput"] = ["form", "multiline", "content-aware-size", "compact-ui", "long-text"],
+        ["TextInput"] = ["form", "input", "validation", "single-line"],
+        ["NumberInput"] = ["form", "input", "validation", "numeric"],
+        ["SelectInput"] = ["form", "input", "validation", "selection", "options"],
+        ["Avatar"] = ["identity", "avatar", "human", "portrait", "colleague"],
+        ["HomoAvatar"] = ["identity", "avatar", "human", "generated"],
+        ["RoboAvatar"] = ["identity", "avatar", "robot", "optional"],
         ["Card"] = ["card-anatomy", "media", "tags", "actions", "visual-collection"],
         ["CardGrid"] = ["card-collection", "responsive-grid", "visual-items", "compact-ui"],
         ["CompactStat"] = ["supporting-metric", "compact-ui", "label-value", "reduce-scroll"],
@@ -648,15 +660,20 @@ public sealed partial class ComponentCatalogService
             ["Change"] = "Raised after a user-initiated tab switch so flows can react to the new selected panel.",
             ["ChildContent"] = "Optional fallback child content path when the tab items are declared directly instead of inside `TabItems`.",
             ["Class"] = "Adds extra Tailwind classes to the tabs root for shell-level atmosphere without replacing the shared internal structure.",
+            ["Density"] = "Independent spacing preset: Normal, Comfortable, or Compact. Replaces the removed TabsVariant presets.",
+            ["Rounded"] = "Corner radius of the tab buttons, independent of density and content-panel rounding.",
+            ["ContentRounded"] = "Corner radius of the content-panel wrapper.",
+            ["NoContent"] = "Omits the content wrapper for a navigation-only strip whose routed content is owned elsewhere.",
+            ["NoSlider"] = "Hides the selected-tab underline indicator without changing selection behavior.",
             ["OverflowMode"] = "Chooses whether long tab strips auto-decide, wrap into multiple rows, or stay single-row and scroll horizontally.",
+            ["PanelOverflowMode"] = "Controls vertical overflow inside the content panel; use with FillHeight only when this panel owns scrolling.",
             ["RenderMode"] = "Chooses server rendering of only the active panel or client rendering of every panel for faster instant switches.",
             ["SelectedIndex"] = "Zero-based selected tab index among the visible tabs.",
             ["SelectedIndexChanged"] = "Two-way binding callback for the selected tab index.",
             ["Style"] = "Appends inline styles to the tabs root when a one-off shell tweak is unavoidable.",
             ["TabItems"] = "Slot that contains the `TabsItem` children defining labels and panel content.",
             ["TabPosition"] = "Moves the tab strip to the top, bottom, left, or right of the panel surface.",
-            ["Tone"] = "Advanced accent color for the selected state. Use it to shift emphasis, not to rescue readability.",
-            ["Variant"] = "Shared shape and density preset for the tabs surface, such as workspace, modal, or workstation styling."
+            ["Tone"] = "Advanced accent color for the selected state. Use it to shift emphasis, not to rescue readability."
         },
         ["TabsItem"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -665,6 +682,7 @@ public sealed partial class ComponentCatalogService
             ["ChildContent"] = "Panel content rendered when the tab becomes active.",
             ["Disabled"] = "Keeps the tab visible but unavailable for selection.",
             ["Icon"] = "Optional icon token rendered before the tab text.",
+            ["Link"] = "Optional navigation URL rendered as an anchor; pair navigation-only tabs with NoContent when the router owns content.",
             ["Text"] = "Primary tab label. If omitted, the component falls back to a stable generic title.",
             ["Visible"] = "Removes the tab from the rendered strip when false."
         },
@@ -685,12 +703,22 @@ public sealed partial class ComponentCatalogService
             ["Compact"] = "Uses the compact operational-page rhythm while retaining a concise description when one is supplied.",
             ["Description"] = "Concise current context for the page; do not repeat it in a second hero or introductory card.",
             ["Stats"] = "Supporting metrics rendered beside page orientation. Prefer `CompactStatStrip` content and omit the slot when metrics are not decision-relevant.",
-            ["Actions"] = "Small primary action set for the page. Keep working filters and surface-specific commands in a nearby `Toolbar`."
+            ["Actions"] = "Small primary action set for the page. Keep working filters and surface-specific commands in a nearby `Toolbar`.",
+            ["Outlet"] = "Optional cascading IPageHeaderOutlet owned by the host. Publishes PageHeaderPresentation on every parameter update so captured fragments stay current; clearing is scoped to the publishing owner. Invalidate only the toolbar and outlet renderers, not the routed body."
         },
-        ["TextArea"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        ["TextAreaInput"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             ["Size"] = "Semantic expected-content height: `Compact` for short comments, `Standard` for ordinary descriptions, and `Extended` for substantial prose.",
             ["Rows"] = "Explicit row override. Leave it unset or zero to let `Size` choose the default height; set it only for a known content-specific requirement."
+        },
+        ["SelectInput"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+            ["ChildContent"] = "Explicit option elements, including typed enum values and a deliberate empty option for nullable selection. There is no Data or DropDownOption collection.",
+            ["ValueExpression"] = "Expression identifying the bound model field for EditContext validation; @bind-Value supplies it automatically."
+        },
+        ["Avatar"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+            ["ImageUrl"] = "Explicit selected image. Keep it when changing other identity settings.",
+            ["DefaultImageSeed"] = "Stable identity seed used to select a bundled human portrait when no image is supplied.",
+            ["UseDefaultImageWhenMissing"] = "Defaults to true and uses a human portrait. False requests the FallbackText rendering explicitly."
         },
         ["Dialog"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -856,12 +884,12 @@ public sealed partial class ComponentCatalogService
                 "Use `Stats` for supporting `CompactStatStrip` content, not a second row of large metric cards.",
                 "Keep only page-level actions in `Actions`; place working controls in a toolbar next to the surface they affect."
             ]),
-        ["TextArea"] = new(
+        ["TextAreaInput"] = new(
             [
                 "Multiline comments, descriptions, notes, prompts, and substantial prose with a height matched to expected content."
             ],
             [
-                "Single-line names, identifiers, or commands that belong in `TextBox`.",
+                "Single-line names, identifiers, or commands that belong in `TextInput`.",
                 "Using one tall default for every multiline field regardless of expected content."
             ],
             [
@@ -869,6 +897,40 @@ public sealed partial class ComponentCatalogService
                 "Set `Rows` only when a known content shape needs a deliberate override; an explicit value takes precedence over `Size`.",
                 "Give the field the available form width unless a narrower width communicates a real input constraint."
             ]),
+        ["TextInput"] = new(
+            ["Single-line model fields, filters, names, and identifiers."],
+            ["Multiline prose or application-owned validation hidden in DOM event handlers."],
+            [
+                "Use @bind-Value for model fields so ValueExpression identifies the real field in EditContext.",
+                "Use Look and FormDensity for visual treatment; preserve input validation and explicit Disabled or ReadOnly states."
+            ]),
+        ["NumberInput"] = new(
+            ["Typed numeric model fields, including nullable numeric values."],
+            ["Text fields that merely happen to contain digits but are identifiers."],
+            ["Set TValue to the domain numeric type and use @bind-Value so parsing errors remain visible through EditContext validation."]),
+        ["SelectInput"] = new(
+            ["Typed selection from a bounded list or enum."],
+            ["Passing the removed DropDown Data or DropDownOption contract to the refactored input."],
+            [
+                "Declare option elements in ChildContent, use the actual value type as TValue, and bind Value to the model field.",
+                "Use an empty option only when the domain permits no selection; do not silently replace an invalid selection with a default."
+            ]),
+        ["Avatar"] = new(
+            ["People and agent colleagues whose primary identity is a human portrait."],
+            ["Replacing an existing selected portrait merely because a robot style is available."],
+            [
+                "Keep the human portrait as the default. AvatarFallbackResolver uses bundled avatar-01.jpg through avatar-08.jpg when ImageUrl is missing.",
+                "Offer robot-01.svg through robot-08.svg from the same assets/identity/avatars directory as an explicit secondary picker choice, then persist the selected URL.",
+                "Pass a stable DefaultImageSeed and meaningful Alt text; keep explicit ImageUrl selections unchanged."
+            ]),
+        ["HomoAvatar"] = new(
+            ["An explicitly selected generated human-style identity."],
+            ["Silently replacing the application's bundled or uploaded human portrait."],
+            ["Use a stable Seed or Id and meaningful Title; this optional generated style is separate from Avatar's portrait default."]),
+        ["RoboAvatar"] = new(
+            ["An explicitly selected optional robot-style identity."],
+            ["The primary default identity for agent colleagues."],
+            ["Keep robot style opt-in, preserve the chosen seed or persisted image URL, and provide meaningful Title text."]),
         ["SecretField"] = new(
             [
                 "Secret entry that combines an input with reveal and copy actions in one reusable field."
@@ -1042,8 +1104,10 @@ public sealed partial class ComponentCatalogService
             ],
             [
                 "Prefer `Tabs` before stacking several `SectionCard` blocks that users read one at a time.",
+                "Use Density and Rounded independently; use NoContent for a navigation-only strip rather than creating empty panels.",
                 "Start with the readable default surface; use `Tone` as an advanced accent and keep shell customization on the root `Class` only.",
-                "Use `OverflowMode.Wrap` or `OverflowMode.Scroll` intentionally for longer label sets, and move to `TabPosition.Left` for settings rails.",
+                "Use `TabsOverflowMode.Wrap` or `TabsOverflowMode.Scroll` intentionally for longer label sets, and move to `TabPosition.Left` for settings rails.",
+                "For opened workspace tabs, prefer a single horizontally scrolling strip that preserves work area height; verify long labels, the active tab, keyboard focus, and close controls at a large desktop viewport.",
                 "Keep the strip focused. If the labels stop scanning quickly, split the workflow instead of adding more tabs."
             ]),
         ["TabsItem"] = new(
@@ -1056,6 +1120,7 @@ public sealed partial class ComponentCatalogService
             ],
             [
                 "Keep labels short and specific, then use `BadgeText` sparingly for counts or short status hints.",
+                "Use Link for route navigation and let the host own routed content and open-workspace lifetime; switching the strip must not discard unrelated editor drafts.",
                 "If a pane needs a unique shell, customize the parent `Tabs` root instead of rebuilding the inner tab button structure."
             ]),
         ["SecondaryTabs"] = new(
@@ -1147,7 +1212,7 @@ public sealed partial class ComponentCatalogService
                 "Compose list-fed `Items` with declarative `<MenuItems>` only when all IDs are unique. Use `MoreItems` and `BottomItems` for their semantic regions.",
                 "Handle `ItemSelected` for pointer, keyboard, and external selection. Map stable IDs or typed payloads to routing; do not infer behavior from labels.",
                 "Let the component measure height for More overflow. Use `OverflowBehavior.AlwaysInMore` for secondary destinations and `PreferVisible` only for genuinely important ones.",
-                "Let the component become a top menu below the small breakpoint and validate rail, More, panels, keyboard, and resize behavior in `/groups/navigation/side-menu`."
+                "Let the component become a top menu below the small breakpoint and validate rail, More, panels, keyboard, and resize behavior in `/navigation#side-menu`."
             ]),
         ["SideMenuItem"] = new(
             [

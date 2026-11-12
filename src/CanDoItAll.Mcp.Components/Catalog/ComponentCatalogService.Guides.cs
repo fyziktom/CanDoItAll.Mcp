@@ -38,8 +38,8 @@ public sealed partial class ComponentCatalogService
             ["builder.Services.AddCanDoItAllBaseLib();"],
             [],
             [],
-            ["_content/CanDoItAll.Components.BaseLib/css/material-icons.css", "_content/CanDoItAll.Components.BaseLib/css/output.css"],
-            "/groups/foundations",
+            ["_content/CanDoItAll.Components.BaseLib/css/material-symbols.css", "_content/CanDoItAll.Components.BaseLib/css/output.css"],
+            "/layout",
             ["Wrap the interactive app in `<ThemeHost>`.", "Mount `<DialogHost />`, `<Tooltip />`, and `<Notification />` once in the interactive layout."]),
         new(
             "CanvasLib",
@@ -60,7 +60,7 @@ public sealed partial class ComponentCatalogService
                 "_content/CanDoItAll.Components.CanvasLib/css/workbench/overlays/05-overlays-and-composer.css",
                 "_content/CanDoItAll.Components.CanvasLib/css/workbench/responsive/06-motion-and-responsive.css"
             ],
-            "/groups/canvas",
+            "/canvas",
             ["Generated asset components load OverlayLib first and preserve verified script order.", "Enable preview and calendar assets only when those surfaces are used."]),
         new(
             "Charts",
@@ -74,7 +74,7 @@ public sealed partial class ComponentCatalogService
             ["<ChartsHeadAssets />"],
             [],
             ["_content/Blazor-ApexCharts/css/apexcharts.css"],
-            "/groups/charts",
+            "/charts",
             ["Use `CdaChart`, `CdaChartSeries`, `CdaChartPoint`, and `CdaChartOptions` as the renderer-neutral boundary."]),
         new(
             "Mermaid",
@@ -88,7 +88,7 @@ public sealed partial class ComponentCatalogService
             ["<MermaidHeadAssets />"],
             [],
             ["_content/CanDoItAll.Components.Mermaid/CanDoItAll.Components.Mermaid.bundle.scp.css"],
-            "/groups/mermaid",
+            "/mermaid",
             ["Keep the default strict security level and disabled HTML labels unless the source is fully trusted."]),
         new(
             "OverlayLib",
@@ -102,7 +102,7 @@ public sealed partial class ComponentCatalogService
             ["<OverlayLibHeadAssets />"],
             ["<OverlayLibBodyAssets IncludeRuntimeAssets=\"true\" />"],
             ["_content/CanDoItAll.Components.OverlayLib/css/overlay-window.css"],
-            "/groups/canvas",
+            "/overlays",
             ["Set `ContainerSelector` and `SafeTopSelector` for the real bounded host.", "CanvasLib asset components already include OverlayLib assets."]),
         new(
             "QRCode",
@@ -116,7 +116,7 @@ public sealed partial class ComponentCatalogService
             [],
             [],
             ["_content/CanDoItAll.Components.QRCode/CanDoItAll.Components.QRCode.bundle.scp.css"],
-            "/groups/qr",
+            "/qr",
             ["Mount `<DialogHost />` once before using `QrCodeButton` or `QrScanButton`.", "Provide a manual decoded-text path and handle camera permission or availability failures."]),
         new(
             "Sandbox",
@@ -130,12 +130,22 @@ public sealed partial class ComponentCatalogService
             [],
             [],
             [],
-            "/groups/coverage",
+            "/",
             ["Use sandbox routes for browser proof after choosing shared structure; do not copy sandbox-only shell CSS into product pages."])
     ];
 
     private static readonly IReadOnlyList<ComponentDecisionGuide> DecisionGuides =
     [
+        new(
+            "agent-identity",
+            "Human portraits with optional generated avatars",
+            ["avatar", "human portrait", "agent colleague", "robot identity"],
+            [new("Avatar", "Primary identity", "Keeps bundled or explicitly selected human portraits as the default for agent colleagues.")],
+            [
+                new("HomoAvatar", "Generated human", "Use when an illustrated human style is explicitly selected."),
+                new("RoboAvatar", "Optional robot", "Use only when the user explicitly selects the robot identity style.")
+            ],
+            ["Preserve current portrait selections and human defaults; expose robot avatars as a secondary, explicit selection."]),
         new(
             "app-shell",
             "Responsive application shell and primary navigation",
@@ -237,7 +247,7 @@ public sealed partial class ComponentCatalogService
                 new("FormSection", "Form grouping", "Groups related fields under a clear section boundary."),
                 new("FormRow", "Field pairing", "Handles common paired or evenly split field layouts."),
                 new("FormField", "Field semantics", "Keeps labels, help, validation, and control alignment together."),
-                new("TextArea", "Multiline entry", "Sizes multiline input from expected content instead of imposing one large minimum height on every form.")
+                new("TextAreaInput", "Multiline entry", "Sizes multiline input from expected content instead of imposing one large minimum height on every form.")
             ],
             [
                 new("Fieldset", "Semantic group", "Use for a related set of controls with one legend."),
@@ -442,7 +452,7 @@ public sealed partial class ComponentCatalogService
             [
                 "Reference `CanDoItAll.Components.BaseLib` and import `CanDoItAll.Components.BaseLib` plus `CanDoItAll.Components.Common`.",
                 "Call `builder.Services.AddCanDoItAllBaseLib()` so SideMenu, dialog, tooltip, and notification services are scoped correctly.",
-                "Load `_content/CanDoItAll.Components.BaseLib/css/material-icons.css` and `_content/CanDoItAll.Components.BaseLib/css/output.css` in `App.razor`.",
+                "Load `_content/CanDoItAll.Components.BaseLib/css/material-symbols.css` and `_content/CanDoItAll.Components.BaseLib/css/output.css` in `App.razor`.",
                 "Use an interactive render mode for the layout and mount `<DialogHost />`, `<Tooltip />`, and `<Notification />` exactly once."
             ],
             [
@@ -451,6 +461,7 @@ public sealed partial class ComponentCatalogService
                 "`SideMenu`: primary responsive navigation; it is already an `<aside>`, so do not wrap it in `Sidebar`.",
                 "`Body`: main content region and explicit scroll owner.",
                 "`PageScaffold`: routed-page header, lead, width, secondary rail, and full-height boundary.",
+                "`PageHeader`: renders inline or publishes PageHeaderPresentation through a cascading IPageHeaderOutlet when the app host owns a shared toolbar.",
                 "`Grid`, `Row`, `Column`, `Stack`, `Cluster`, and `Split`: inner page composition after the shell is established."
             ],
             layoutExample,
@@ -468,6 +479,8 @@ public sealed partial class ComponentCatalogService
             [
                 "Choose one vertical scroll owner. In a full-height shell use `Layout FitViewport=\"true\" LockOverflow=\"true\"` and `Body FillHeight=\"true\" Scrollable=\"true\"`.",
                 "Use `ViewportOffset` only when chrome outside `Layout` consumes known viewport height.",
+                "Keep the app's opened-workspace tab strip visible and bounded. Use horizontal scrolling for many open workspaces so tabs do not consume the content viewport through repeated wrapping.",
+                "A PageHeader outlet registration invalidates its toolbar renderers on every parameter update, including captured fragment changes. Subscribe only the toolbar, help, and statistics outlets; rerendering the routed body from that notification creates a feedback loop.",
                 "Use `PageScaffold FillHeight=\"true\"` for workspaces whose inner surface owns overflow; leave it false for document pages that scroll naturally.",
                 "Use `PageScaffoldMode.FocusWorkbench` only for dense workbench pages that intentionally use the full width.",
                 "Use `Sidebar` for a generic custom rail, not around `SideMenu`. Nesting both creates duplicate width and scroll ownership.",
@@ -477,14 +490,14 @@ public sealed partial class ComponentCatalogService
                 "`SideMenu` automatically changes from large/medium rail to a small-screen top menu below 768px; do not build a second mobile navigation component.",
                 "The small-screen menu opens downward and the full-height body remains the content scroll owner.",
                 "Use `ColumnsSm`, `ColumnsMd`, `ColumnsLg`, or `ColumnTemplate*` rather than page-local media-query wrappers.",
-                "Test collapsed and expanded rails, height-driven overflow, the More panel, bottom utility panels, keyboard activation, and a real browser resize across the 768px breakpoint."
+                "For large-screen applications, test collapsed and expanded rails, height-driven overflow, the More panel, bottom utility panels, and keyboard activation at supported desktop viewports."
             ],
             [
                 "Call `component_get` for `Layout`, `SideMenu`, `Body`, and `PageScaffold` before implementation.",
-                "Call `component_usage_examples` for `SideMenu` and open `/groups/navigation/side-menu` for the canonical responsive proof.",
+                "Call `component_usage_examples` for `SideMenu` and open `/navigation#side-menu` for the canonical responsive proof.",
                 "Verify exactly one BaseLib service registration and one overlay host of each type.",
                 "Verify route changes update menu selection and menu selections navigate without duplicated callbacks.",
-                "Use browser assertions at desktop, constrained-height desktop, and mobile widths; build success cannot prove overflow, persistence, focus, or dropdown placement."
+                "Use browser assertions at desktop and constrained-height desktop viewports for application proof; build success cannot prove overflow, persistence, focus, or dropdown placement. Reusable BaseLib cross-viewport testing is a separate library concern."
             ]);
     }
 
@@ -546,8 +559,7 @@ public sealed partial class ComponentCatalogService
             var search = Search(normalizedUseCase, normalizedLibrary, group: null, limit: boundedLimit * 2);
             foreach (var hit in search.Components)
             {
-                if (recommendations.Count >= boundedLimit || !seenRecommendations.Add(hit.Name))
-                {
+                if (recommendations.Count >= boundedLimit || seenAlternatives.Contains(hit.Name) || !seenRecommendations.Add(hit.Name)) {
                     continue;
                 }
 
