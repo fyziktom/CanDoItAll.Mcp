@@ -11,8 +11,10 @@ Test project for the corresponding CanDoItAll runtime, module, component, MCP, o
 - Validation command:
 
 ```powershell
-dotnet test tests/CanDoItAll.Mcp.Components.Tests/CanDoItAll.Mcp.Components.Tests.csproj
+dotnet test tests/CanDoItAll.Mcp.Components.Tests/CanDoItAll.Mcp.Components.Tests.csproj --configuration Release -p:UseLocalCanDoItAllLibraries=true --filter "FullyQualifiedName~ComponentCatalogServiceTests|FullyQualifiedName~ComponentsToolsTests|FullyQualifiedName~ComponentsMcpProtocolTests" /m:1
 ```
+
+Use source mode for the coordinated UI refactor until matching Components packages are published. Discovery with the same filter and `--list-tests` must find 39 cases. The focused gate covers reflected input/button/tab contracts, human-first avatar recommendations, organized stylesheet sources, curated examples, and the actual stdio tool protocol. Idle-shutdown tests remain a separate topic.
 
 ## References
 

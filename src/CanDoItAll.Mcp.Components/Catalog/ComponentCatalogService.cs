@@ -289,7 +289,7 @@ public sealed partial class ComponentCatalogService
                     example.Route,
                     groupKey,
                     groupLookup[groupKey].Title,
-                    example.Scenario.ToLabel(),
+                    example.Title,
                     example.Summary,
                     example.Tags,
                     example.ComponentNames);
@@ -1102,26 +1102,24 @@ public sealed partial class ComponentCatalogService
 
         IReadOnlyList<string> sourceFiles = family switch
         {
-            "Badges" => [@"Tailwind\controls\badges.css"],
-            "Buttons" => [@"Tailwind\controls\buttons.css"],
+            "Badges" => [@"Tailwind\badges\badge.css"],
+            "Buttons" => [@"Tailwind\buttons\button.css"],
             "Cards" => componentName.Contains("Stat", StringComparison.OrdinalIgnoreCase) ||
                        componentName.Contains("Summary", StringComparison.OrdinalIgnoreCase)
-                ? [@"Tailwind\surfaces\cards.css", @"Tailwind\layout\stats.css"]
-                : [@"Tailwind\surfaces\cards.css"],
-            "DataVisualization" => [@"Tailwind\foundation\radzen-layout.css"],
+                ? [@"Tailwind\cards\card.css", @"Tailwind\cards\summary-tile.css", @"Tailwind\cards\stats-card-row.css"]
+                : [@"Tailwind\cards\card.css"],
             "Feedback" => componentName.Contains("Popover", StringComparison.OrdinalIgnoreCase) ||
                           componentName.Contains("Tooltip", StringComparison.OrdinalIgnoreCase)
                 ? []
-                : [@"Tailwind\feedback\alerts.css"],
-            "Forms" => [@"Tailwind\forms\fields.css"],
-            "Identity" => [@"Tailwind\typography\text.css"],
+                : [@"Tailwind\feedback\alert.css"],
+            "Forms" => [@"Tailwind\forms\fields.css", @"Tailwind\forms\form-controls.css"],
             "Layout" => componentName.Contains("Stat", StringComparison.OrdinalIgnoreCase)
-                ? [@"Tailwind\layout\stats.css"]
-                : [@"Tailwind\layout\stacks.css", @"Tailwind\layout\sheets.css"],
-            "Lists" => [@"Tailwind\layout\sheets.css", @"Tailwind\surfaces\cards.css"],
+                ? [@"Tailwind\cards\stats-card-row.css"]
+                : [],
+            "Lists" => [@"Tailwind\lists\list-detail-shell.css"],
             "Modals" => [],
             "Navigation" => componentName.Contains("Tree", StringComparison.OrdinalIgnoreCase)
-                ? [@"Tailwind\navigation\treeview.css"]
+                ? [@"Tailwind\navigation\tree-view.css"]
                 : componentName.Contains("Tab", StringComparison.OrdinalIgnoreCase)
                     ? [@"Tailwind\navigation\tabs.css"]
                     : componentName.Contains("Header", StringComparison.OrdinalIgnoreCase) ||
@@ -1130,8 +1128,8 @@ public sealed partial class ComponentCatalogService
                       componentName.Contains("Toc", StringComparison.OrdinalIgnoreCase)
                         ? [@"Tailwind\navigation\page-header.css"]
                         : [],
-            "Storage" => [@"Tailwind\surfaces\cards.css", @"Tailwind\controls\badges.css"],
-            "Typography" => [@"Tailwind\typography\text.css"],
+            "Storage" => [@"Tailwind\cards\card.css", @"Tailwind\badges\badge.css"],
+            "Typography" => [@"Tailwind\typography\text-block.css"],
             _ => []
         };
 

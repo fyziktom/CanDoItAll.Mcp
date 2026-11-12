@@ -14,16 +14,16 @@ public sealed class ComponentsToolsTests
     {
         var tools = CreateTools();
 
-        var search = await tools.ComponentsSearchAsync("TextBox");
-        var component = await tools.ComponentGetAsync("TextBox");
+        var search = await tools.ComponentsSearchAsync("TextInput");
+        var component = await tools.ComponentGetAsync("TextInput");
 
         Assert.True(search.Ok);
         Assert.NotNull(search.Data);
-        Assert.Contains(search.Data!.Components, hit => string.Equals(hit.Name, "TextBox", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(search.Data!.Components, hit => string.Equals(hit.Name, "TextInput", StringComparison.OrdinalIgnoreCase));
 
         Assert.True(component.Ok);
         Assert.NotNull(component.Data);
-        Assert.Equal("TextBox", component.Data!.Name);
+        Assert.Equal("TextInput", component.Data!.Name);
     }
 
     [Fact]
@@ -91,7 +91,7 @@ public sealed class ComponentsToolsTests
 
         timeProvider.Advance(TimeSpan.FromSeconds(10));
 
-        var search = await tools.ComponentsSearchAsync("TextBox");
+        var search = await tools.ComponentsSearchAsync("TextInput");
         var snapshot = activityTracker.GetSnapshot();
 
         Assert.True(search.Ok);
