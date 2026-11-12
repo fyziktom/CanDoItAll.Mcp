@@ -17,6 +17,13 @@ public sealed partial class ComponentCatalogService
     ];
     private static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> CssNotesByComponent = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase)
     {
+        ["ThemeHost"] =
+        [
+            "Emits `data-ui-theme` for the light, dark, or custom theme key; the shared token definitions live in `Tailwind/theme.css`.",
+            "Use `--tone-page-bg`, `--tone-surface`, `--tone-surface-soft`, `--tone-border`, and `--tone-text-*` for structural colors, and pair each semantic tone's background, foreground, and border.",
+            "The `--color-chrome-*` scale reverses in dark mode; `--color-neutral-*` remains fixed for deliberately constant surfaces and shadows.",
+            "Load app-owned overrides after BaseLib output CSS and scope them to the intended `data-ui-theme` boundary. Keep the shared `--cad-space-*`, `--cad-radius-*`, and `--cad-shadow-*` tokens for spacing, shape, and shadows."
+        ],
         ["Button"] =
         [
             "Uses the shared BaseLib button variants, sizes, and tones from `_content/CanDoItAll.Components.BaseLib/css/output.css`.",
@@ -41,6 +48,11 @@ public sealed partial class ComponentCatalogService
         [
             "Uses content-aware semantic heights from the BaseLib form styles instead of one large minimum height.",
             "Prefer `Size` for expected content length and use `Rows` only as a deliberate override."
+        ],
+        ["CheckBox"] =
+        [
+            "Uses shared form-control colors and the `--ui-checkbox-checkmark` and `--ui-checkbox-indeterminate` image tokens defined for light and dark theme boundaries.",
+            "Keep checked and indeterminate glyph contrast aligned with the control's semantic fill, including when `data-ui-theme` is set on the document root."
         ],
         ["SecretField"] =
         [
@@ -128,12 +140,14 @@ public sealed partial class ComponentCatalogService
         ],
         ["TreeView"] =
         [
-            "Uses shared `cad-treeview` styles and hardened tree keyboard behavior.",
+            "Uses shared `cda-treeview` styles and hardened tree keyboard behavior.",
             "Keep hierarchical navigation in `TreeView`; do not flatten arbitrary depth into `SideMenu`."
         ],
         ["OverlayWindow"] =
         [
             "Uses `_content/CanDoItAll.Components.OverlayLib/css/overlay-window.css` plus the runtime loaded by `<OverlayLibBodyAssets />`.",
+            "Neutral colors use `--ui-overlay-{surface,surface-soft,border,border-soft,text,text-strong,text-muted,shadow-color}`; status colors use `--ui-overlay-{info,secondary,success,warning,danger}-{bg,fg,border}`.",
+            "BaseLib resolves the overlay aliases from current semantic tones at every `data-ui-theme` boundary. Overlay CSS retains standalone literal defaults when BaseLib styles are absent; override paired status colors together.",
             "Container and safe-top selectors define the real placement boundary; avoid copying drag, resize, minimize, or normalization logic into consumers."
         ],
         ["QrCodeView"] =
@@ -168,7 +182,8 @@ public sealed partial class ComponentCatalogService
         ["BaseLib"] =
         [
             "BaseLib components render against `_content/CanDoItAll.Components.BaseLib/css/output.css`.",
-            "Typography, spacing, surfaces, and status tones are shared through the BaseLib token system."
+            "Structural colors use `--tone-*`; semantic status colors pair `--tone-{name}-{soft,solid}-{bg,fg,border}` under the current `data-ui-theme` boundary.",
+            "The chrome palette reverses in dark mode while neutral colors remain fixed; spacing, shape, and shadows retain the shared `--cad-space-*`, `--cad-radius-*`, and `--cad-shadow-*` tokens."
         ],
         ["CanvasLib"] =
         [
@@ -188,6 +203,7 @@ public sealed partial class ComponentCatalogService
         ["OverlayLib"] =
         [
             "OverlayLib components render against the stylesheet exposed by `<OverlayLibHeadAssets />` and the plain runtime exposed by `<OverlayLibBodyAssets />`.",
+            "Window and toolbox surfaces use `--ui-overlay-*` neutral aliases plus paired `--ui-overlay-{info,secondary,success,warning,danger}-{bg,fg,border}` status tokens. BaseLib resolves these aliases at each `data-ui-theme` boundary; standalone CSS retains literal defaults when BaseLib styles are absent.",
             "Use `OverlayWindowState` as the generic state boundary for placement, size, visibility, and minimized state."
         ],
         ["QRCode"] =
@@ -1157,7 +1173,9 @@ public sealed partial class ComponentCatalogService
             ],
             [
                 "Wrap the root interactive layout once and keep app-owned theme overrides in an app stylesheet loaded after BaseLib output.",
-                "Use semantic tones and variables rather than hard-coded colors or generated stylesheet edits."
+                "Use `ThemeKey` for the `data-ui-theme` boundary and set `ColorScheme` explicitly for custom keys when native controls need light or dark browser styling.",
+                "Use current semantic tone variables from `Tailwind/theme.css`, pair foreground and background colors, and preserve fixed neutral colors where surfaces intentionally keep one appearance.",
+                "Verify light-to-dark and dark-to-light switching on the same rendered surface, including open overlays and native form controls; do not hand-edit generated output CSS."
             ]),
         ["Layout"] = new(
             [

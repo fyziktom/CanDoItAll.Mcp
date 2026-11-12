@@ -79,6 +79,10 @@ Tabs use `TabsDensity` and `TabsRounded` instead of `TabsVariant`. `NoContent` s
 
 `SelectionListItem` has two explicit interaction modes. Without `OnSelect`, its content is a noninteractive surface. With `OnSelect`, the content region becomes a selection button; `Disabled` affects only that button. The `Actions` fragment remains consumer-owned, so each action must receive its own disabled state.
 
+`ThemeHost` emits `data-ui-theme`. The current color contract lives in the Components repository's `Tailwind/theme.css`: use structural `--tone-*` variables and pair semantic background, foreground, and border colors. The `--color-chrome-*` scale reverses in dark mode, while `--color-neutral-*` remains fixed for intentionally constant surfaces and shadows. Spacing, shape, and shadows still use `--cad-space-*`, `--cad-radius-*`, and `--cad-shadow-*`. Load app-owned overrides after BaseLib CSS, pass `ColorScheme` for custom theme keys when needed, and verify both switching directions in the same browser session, including open overlays and form controls.
+
+Overlay windows and toolboxes consume `--ui-overlay-*` colors. BaseLib resolves their neutral aliases and `--ui-overlay-{info,secondary,success,warning,danger}-{bg,fg,border}` status tokens at each theme boundary; standalone OverlayLib styles retain literal defaults when BaseLib styles are absent. Override status colors as a matching set. Checkboxes use `--ui-checkbox-checkmark` and `--ui-checkbox-indeterminate` image tokens for their light and dark glyphs, including document-root theme boundaries.
+
 Choose content-aware sizes rather than universal large defaults:
 
 - `TextAreaInput Size="TextAreaSize.Compact"` for short comments, `Standard` for ordinary descriptions, and `Extended` for substantial prose; use `Rows` only as a deliberate override.

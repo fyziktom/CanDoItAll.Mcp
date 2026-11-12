@@ -40,7 +40,7 @@ public sealed partial class ComponentCatalogService
             [],
             ["_content/CanDoItAll.Components.BaseLib/css/material-symbols.css", "_content/CanDoItAll.Components.BaseLib/css/output.css"],
             "/layout",
-            ["Wrap the interactive app in `<ThemeHost>`.", "Mount `<DialogHost />`, `<Tooltip />`, and `<Notification />` once in the interactive layout."]),
+            ["Wrap the interactive app in `<ThemeHost>`; its `data-ui-theme` boundary selects the semantic `--tone-*` colors defined in `Tailwind/theme.css`.", "Load app-owned theme overrides after BaseLib CSS and pair background, foreground, and border tones.", "Mount `<DialogHost />`, `<Tooltip />`, and `<Notification />` once in the interactive layout."]),
         new(
             "CanvasLib",
             "CanDoItAll.Components.CanvasLib",
@@ -103,7 +103,7 @@ public sealed partial class ComponentCatalogService
             ["<OverlayLibBodyAssets IncludeRuntimeAssets=\"true\" />"],
             ["_content/CanDoItAll.Components.OverlayLib/css/overlay-window.css"],
             "/overlays",
-            ["Set `ContainerSelector` and `SafeTopSelector` for the real bounded host.", "CanvasLib asset components already include OverlayLib assets."]),
+            ["Set `ContainerSelector` and `SafeTopSelector` for the real bounded host.", "CanvasLib asset components already include OverlayLib assets.", "Overlay window and toolbox colors use `--ui-overlay-*` aliases resolved from BaseLib tones at each `data-ui-theme` boundary; standalone styles retain literal defaults when BaseLib CSS is absent."]),
         new(
             "QRCode",
             "CanDoItAll.Components.QRCode",
