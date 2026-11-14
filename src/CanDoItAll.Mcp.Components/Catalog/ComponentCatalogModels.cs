@@ -73,7 +73,9 @@ public sealed record CanvasContractDocument(
 
 public sealed record CanvasContractPropertyDocument(
     string Name,
-    string Type);
+    string Type) {
+    public IReadOnlyList<string> AllowedValues { get; init; } = [];
+}
 
 public sealed record ComponentsSearchData(
     string Query,

@@ -901,6 +901,18 @@ public sealed partial class ComponentCatalogService
     };
     private static readonly IReadOnlyDictionary<string, ComponentGuidanceDocument> GuidanceByComponent = new Dictionary<string, ComponentGuidanceDocument>(StringComparer.OrdinalIgnoreCase)
     {
+        ["CanvasWorkbench"] = new(
+            ["Interactive node canvases with shared selection, navigation, clipboard requests, and selected-node actions."],
+            ["Independent document keyboard handlers or hover timers that compete with the shared canvas runtime."],
+            [
+                "Keep runtime and preview surfaces aligned with the shared canvas contracts and CanvasThemeTokenPack; mount CanvasLibHeadAssets and CanvasLibBodyAssets for the complete shared assets.",
+                "Populate CanvasWorkbenchNode.ToolbarActions for the single selected-node toolbar. The visible Node actions control and Ctrl+M toggle one toolbar whose size stays independent of canvas zoom and whose position is clamped to the canvas. Escape closes it and restores canvas focus.",
+                "Set CanvasWorkbenchAction.KeyboardCommand to CanvasWorkbenchKeyboardCommand.CopyIdentifier for Ctrl+I; None adds no keyboard command. ShortcutKey retains its existing unmodified-key shortcut within the active context menu. Ctrl+I dispatches the copy-identifier action even when the toolbar is closed.",
+                "The shared router owns active-canvas scope and leaves typing controls, editable content, descendant dialogs and overlays, and other canvases isolated. A canvas hosted inside an outer dialog still owns its focused keys. Do not add a competing global key listener or restore hover-driven toolbar timers.",
+                "Handle ContextActionRequested in the consumer for toolbar and copy-identifier commands. The host retains current-selection validation, authorization, copy-info/tree/delete behavior, and OS clipboard writes; declaring a toolbar action does not grant mutation authority.",
+                "Existing Ctrl+C, Ctrl+X, Ctrl+V, and Ctrl+D continue through ClipboardRequested and CanvasWorkbenchClipboardOptions capabilities. Ctrl+Z and Ctrl+Y remain unhandled by the shared command router.",
+                "Use the existing /canvas#canvas-workbench sample in examples/Canvas/WorkbenchWithFloatingWindows.razor to exercise typed ToolbarActions, ContextActionRequested receipts, single-selection eligibility, and toolbar dismissal after node removal."
+            ]),
         ["PageHeader"] = new(
             [
                 "Compact page orientation with a title, concise current context, supporting metrics, and a small action set.",

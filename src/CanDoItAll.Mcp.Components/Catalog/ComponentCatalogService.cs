@@ -379,7 +379,9 @@ public sealed partial class ComponentCatalogService
                 BuildCanvasContractSummary(type.Name),
                 type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
                     .Where(property => property.GetMethod is not null)
-                    .Select(property => new CanvasContractPropertyDocument(property.Name, FormatTypeName(property.PropertyType)))
+                    .Select(property => new CanvasContractPropertyDocument(property.Name, FormatTypeName(property.PropertyType)) {
+                        AllowedValues = ResolveAllowedValues(property.PropertyType)
+                    })
                     .ToArray()))
             .ToArray();
     }

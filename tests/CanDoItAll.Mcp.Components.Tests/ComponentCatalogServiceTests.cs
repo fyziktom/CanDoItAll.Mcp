@@ -56,10 +56,17 @@ public sealed class ComponentCatalogServiceTests
 
         var component = service.GetComponent("CanvasWorkbench");
         var examples = service.GetExamples("CanvasWorkbench");
+        var usage = service.GetUsageExamples("CanvasWorkbench");
 
         Assert.Equal("CanvasLib", component.Library);
         Assert.Contains(component.Parameters, parameter => string.Equals(parameter.Name, "Surface", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(examples.Examples, example => string.Equals(example.GroupKey, "canvas", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(component.Guidance.CompositionRules, rule => rule.Contains("ToolbarActions", StringComparison.Ordinal));
+        Assert.Contains(component.Guidance.CompositionRules, rule => rule.Contains("Ctrl+I", StringComparison.Ordinal) && rule.Contains("CopyIdentifier", StringComparison.Ordinal));
+        Assert.Contains(component.Guidance.CompositionRules, rule => rule.Contains("ContextActionRequested", StringComparison.Ordinal));
+        Assert.Contains(component.Guidance.CompositionRules, rule => rule.Contains("/canvas#canvas-workbench", StringComparison.Ordinal));
+        Assert.Contains(usage.UsageExamples, example => example.FilePath.EndsWith(Path.Combine("Examples", "Canvas", "WorkbenchWithFloatingWindows.razor"), StringComparison.OrdinalIgnoreCase)
+            && example.Snippet.Contains("ContextActionRequested", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -90,6 +97,28 @@ public sealed class ComponentCatalogServiceTests
 
         var contract = Assert.Single(result.Contracts, item => string.Equals(item.Name, "CanvasWorkbenchSurface", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(contract.Properties, property => string.Equals(property.Name, "Nodes", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void Canvas_Contracts_Expose_Toolbar_Actions_And_Typed_Command_Values() {
+        var service = CreateService();
+
+        var nodes = service.GetCanvasContracts("CanvasWorkbenchNode");
+        var node = Assert.Single(nodes.Contracts, item => item.Name == "CanvasWorkbenchNode");
+        var toolbar = Assert.Single(node.Properties, property => property.Name == "ToolbarActions");
+        Assert.Equal("List<CanvasWorkbenchAction>", toolbar.Type);
+        Assert.Empty(toolbar.AllowedValues);
+
+        var commands = service.GetCanvasContracts("CanvasWorkbenchKeyboardCommand");
+        var action = Assert.Single(commands.Contracts, item => item.Name == "CanvasWorkbenchAction");
+        var command = Assert.Single(action.Properties, property => property.Name == "KeyboardCommand");
+        Assert.Equal("CanvasWorkbenchKeyboardCommand", command.Type);
+        Assert.Equal(["CopyIdentifier", "None"], command.AllowedValues);
+
+        var clipboardContracts = service.GetCanvasContracts("CanvasWorkbenchClipboardRequest");
+        var clipboard = Assert.Single(clipboardContracts.Contracts, item => item.Name == "CanvasWorkbenchClipboardRequest");
+        var clipboardAction = Assert.Single(clipboard.Properties, property => property.Name == "Action");
+        Assert.Equal(["Copy", "Cut", "Duplicate", "Paste"], clipboardAction.AllowedValues);
     }
 
     [Fact]
