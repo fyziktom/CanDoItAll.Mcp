@@ -126,9 +126,9 @@ public sealed partial class ComponentCatalogService
     public ComponentCssTokensData GetCssTokens(string component)
     {
         var resolvedComponent = ResolveComponent(component);
-        var stylesheets = resolvedComponent.Library switch
+        IReadOnlyList<string> stylesheets = resolvedComponent.Library switch
         {
-            "CanvasLib" => CanvasLibStylesheets,
+            "CanvasLib" => [CanvasLibScopedStylesheet, ..CanvasLibStylesheets],
             "Charts" => ["_content/Blazor-ApexCharts/css/apexcharts.css"],
             "Mermaid" => ["_content/CanDoItAll.Components.Mermaid/CanDoItAll.Components.Mermaid.bundle.scp.css"],
             "OverlayLib" => ["_content/CanDoItAll.Components.OverlayLib/css/overlay-window.css"],
@@ -1051,12 +1051,14 @@ public sealed partial class ComponentCatalogService
     {
         if (string.Equals(library, "CanvasLib", StringComparison.OrdinalIgnoreCase))
         {
+            var scopedCssPath = $"{sourcePath}.css";
             return CanvasLibStylesheets
                 .Select(path => ComponentRepositoryPath(Path.Combine(
                     "src",
                     "CanDoItAll.Components.CanvasLib",
                     "wwwroot",
                     path.Replace("_content/CanDoItAll.Components.CanvasLib/", string.Empty).Replace('/', Path.DirectorySeparatorChar))))
+                .Concat(File.Exists(scopedCssPath) ? [scopedCssPath] : [])
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray();
         }

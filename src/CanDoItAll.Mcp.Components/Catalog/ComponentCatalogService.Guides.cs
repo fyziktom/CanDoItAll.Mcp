@@ -53,6 +53,7 @@ public sealed partial class ComponentCatalogService
             ["<CanvasLibHeadAssets />"],
             ["<CanvasLibBodyAssets IncludeRuntimeAssets=\"true\" IncludePreviewAssets=\"...\" IncludeCalendarAssets=\"...\" />"],
             [
+                CanvasLibScopedStylesheet,
                 "_content/CanDoItAll.Components.CanvasLib/css/workbench/shell/01-layout-and-shell.css",
                 "_content/CanDoItAll.Components.CanvasLib/css/workbench/chrome/02-toolbar-and-windows.css",
                 "_content/CanDoItAll.Components.CanvasLib/css/workbench/panels/03-help-settings-and-preview.css",
@@ -61,7 +62,7 @@ public sealed partial class ComponentCatalogService
                 "_content/CanDoItAll.Components.CanvasLib/css/workbench/responsive/06-motion-and-responsive.css"
             ],
             "/canvas",
-            ["Generated asset components load OverlayLib first and preserve verified script order.", "Enable preview and calendar assets only when those surfaces are used."]),
+            ["CanvasLibHeadAssets loads OverlayLib styles first, then CanvasLib's generated scoped CSS bundle and the six global workbench stylesheets. Keep the scoped bundle for dialog and other component-local styles.", "Generated asset components preserve verified script order.", "Enable preview and calendar assets only when those surfaces are used."]),
         new(
             "Charts",
             "CanDoItAll.Components.Charts",

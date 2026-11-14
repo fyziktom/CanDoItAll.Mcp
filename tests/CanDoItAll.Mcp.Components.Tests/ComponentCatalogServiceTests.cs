@@ -72,6 +72,13 @@ public sealed class ComponentCatalogServiceTests
         Assert.Contains(result.Stylesheets, stylesheet => stylesheet.Contains("css/workbench/", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(result.SourceFiles, file => file.EndsWith(Path.Combine("wwwroot", "css", "workbench", "shell", "01-layout-and-shell.css"), StringComparison.OrdinalIgnoreCase));
         Assert.Contains(result.Notes, note => note.Contains("CanvasThemeTokenPack", StringComparison.OrdinalIgnoreCase));
+
+        var dialog = service.GetCssTokens("CanvasOverlayDialog");
+        var examples = service.GetExamples("CanvasOverlayDialog");
+
+        Assert.Contains(dialog.Notes, note => note.Contains("--ui-overlay-", StringComparison.Ordinal));
+        Assert.Contains(dialog.Stylesheets, stylesheet => stylesheet.EndsWith("CanDoItAll.Components.CanvasLib.bundle.scp.css", StringComparison.Ordinal));
+        Assert.Contains(examples.Examples, example => example.Id == "modals-canvas-overlay" && example.Route == "/modals#canvas-overlay-dialog");
     }
 
     [Fact]
@@ -224,6 +231,7 @@ public sealed class ComponentCatalogServiceTests
     [InlineData("Button", "button.css")]
     [InlineData("TextAreaInput", "form-controls.css")]
     [InlineData("Dialog", "dialog.css")]
+    [InlineData("CanvasOverlayDialog", "CanvasOverlayDialog.razor.css")]
     public void Css_Tokens_Resolve_Organized_Source_Files(string component, string expectedFile) {
         var service = CreateService();
 
@@ -431,6 +439,7 @@ public sealed class ComponentCatalogServiceTests
         var libraries = service.GetLibraries();
         var baseLib = Assert.Single(libraries, library => string.Equals(library.Name, "BaseLib", StringComparison.OrdinalIgnoreCase));
         var overlay = Assert.Single(libraries, library => string.Equals(library.Name, "OverlayLib", StringComparison.OrdinalIgnoreCase));
+        var canvas = Assert.Single(libraries, library => string.Equals(library.Name, "CanvasLib", StringComparison.OrdinalIgnoreCase));
         var qrCode = Assert.Single(libraries, library => string.Equals(library.Name, "QRCode", StringComparison.OrdinalIgnoreCase));
 
         Assert.Equal(8, libraries.Count);
@@ -438,6 +447,8 @@ public sealed class ComponentCatalogServiceTests
         Assert.Contains(baseLib.Stylesheets, stylesheet => stylesheet.EndsWith("material-symbols.css", StringComparison.Ordinal));
         Assert.Contains(baseLib.ServiceRegistrations, registration => registration.Contains("AddCanDoItAllBaseLib", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(overlay.BodyAssets, asset => asset.Contains("OverlayLibBodyAssets", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(canvas.Stylesheets, stylesheet => stylesheet.EndsWith("CanDoItAll.Components.CanvasLib.bundle.scp.css", StringComparison.Ordinal));
+        Assert.Contains(canvas.Notes, note => note.Contains("scoped CSS bundle", StringComparison.Ordinal));
         Assert.Equal("/qr", qrCode.SandboxRoute);
         Assert.Contains(qrCode.Notes, note => note.Contains("DialogHost", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(libraries, library => library.Name.Contains("WebGl", StringComparison.OrdinalIgnoreCase));

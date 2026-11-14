@@ -6,6 +6,8 @@ public sealed partial class ComponentCatalogService
 {
     private static readonly Regex ComponentReferenceRegex = new(@"<(?<name>[A-Z][A-Za-z0-9_]*)\b", RegexOptions.Compiled);
     private static readonly Regex RouteDirectiveRegex = new(@"^\s*@page\s+""(?<route>[^""]+)""", RegexOptions.Compiled);
+    private const string CanvasLibScopedStylesheet = "_content/CanDoItAll.Components.CanvasLib/CanDoItAll.Components.CanvasLib.bundle.scp.css";
+
     private static readonly IReadOnlyList<string> CanvasLibStylesheets =
     [
         "_content/CanDoItAll.Components.CanvasLib/css/workbench/shell/01-layout-and-shell.css",
@@ -160,6 +162,13 @@ public sealed partial class ComponentCatalogService
             "Uses the QRCode scoped CSS bundle, BaseLib `DialogService`, and a mounted `<DialogHost />`.",
             "Camera scanning must retain the manual decoded-text fallback for unavailable or denied camera access."
         ],
+        ["CanvasOverlayDialog"] =
+        [
+            "Uses the colocated `CanvasOverlayDialog.razor.css` for dialog paint, included by `<CanvasLibHeadAssets />` through the generated CanvasLib scoped CSS bundle.",
+            "Dialog surface, foreground, border, and shadow use existing `--ui-overlay-{surface,text,border-soft,shadow-color}` aliases. BaseLib resolves these at each `data-ui-theme` boundary; the scoped CSS retains standalone literal defaults when BaseLib styles are absent. Child typography and controls retain their own semantic tokens.",
+            "Override foreground and surface colors together through these aliases; keep dialog paint in shared CSS instead of reintroducing a fixed light inline background.",
+            "Use `/modals#canvas-overlay-dialog` to verify light and dark themes, disabled native and linked actions, form fields, maximize, and close behavior."
+        ],
         ["CanvasWorkbench"] =
         [
             "Uses the shared CanvasLib workbench stylesheets exposed by `<CanvasLibHeadAssets />` under `_content/CanDoItAll.Components.CanvasLib/css/workbench/...` plus the typed `CanvasThemeTokenPack` theme vocabulary.",
@@ -187,7 +196,7 @@ public sealed partial class ComponentCatalogService
         ],
         ["CanvasLib"] =
         [
-            "CanvasLib components render against the shared workbench stylesheets exposed by `<CanvasLibHeadAssets />`.",
+            "`<CanvasLibHeadAssets />` loads OverlayLib styles first, then the generated CanvasLib scoped CSS bundle and the six global workbench stylesheets. The scoped bundle is required for components such as `CanvasOverlayDialog` even when all global workbench styles are present.",
             "Canvas surfaces also use the typed `CanvasThemeTokenPack` so runtime and preview assets stay aligned."
         ],
         ["Charts"] =
