@@ -64,7 +64,11 @@ public sealed class ComponentCatalogServiceTests
         Assert.Contains(component.Guidance.CompositionRules, rule => rule.Contains("ToolbarActions", StringComparison.Ordinal));
         Assert.Contains(component.Guidance.CompositionRules, rule => rule.Contains("Ctrl+I", StringComparison.Ordinal) && rule.Contains("CopyIdentifier", StringComparison.Ordinal));
         Assert.Contains(component.Guidance.CompositionRules, rule => rule.Contains("ContextActionRequested", StringComparison.Ordinal));
+        Assert.Contains(component.Guidance.CompositionRules, rule => rule.Contains("SectionKey", StringComparison.Ordinal) && rule.Contains("required", StringComparison.Ordinal));
+        Assert.Contains(component.Guidance.CompositionRules, rule => rule.Contains("name-first form", StringComparison.Ordinal));
+        Assert.Contains(component.Guidance.CompositionRules, rule => rule.Contains("RequiresComposerAcknowledgement", StringComparison.Ordinal) && rule.Contains("OpeningId", StringComparison.Ordinal));
         Assert.Contains(component.Guidance.CompositionRules, rule => rule.Contains("/canvas#canvas-workbench", StringComparison.Ordinal));
+        Assert.Contains(component.Guidance.CompositionRules, rule => rule.Contains("Create sample item", StringComparison.Ordinal) && rule.Contains("Edit sample item", StringComparison.Ordinal));
         Assert.Contains(usage.UsageExamples, example => example.FilePath.EndsWith(Path.Combine("Examples", "Canvas", "WorkbenchWithFloatingWindows.razor"), StringComparison.OrdinalIgnoreCase)
             && example.Snippet.Contains("ContextActionRequested", StringComparison.Ordinal));
     }
