@@ -729,7 +729,7 @@ public sealed partial class ComponentCatalogService
         {
             ["Compact"] = "Uses the compact operational-page rhythm while retaining a concise description when one is supplied.",
             ["Description"] = "Concise current context for the page; do not repeat it in a second hero or introductory card.",
-            ["Stats"] = "Supporting metrics rendered beside page orientation. Prefer `CompactStatStrip` content and omit the slot when metrics are not decision-relevant.",
+            ["Stats"] = "Supporting badges or CompactStatStrip beside the title and actions. A host using IPageHeaderOutlet should keep them in its existing toolbar rather than allocate another full-width band.",
             ["Actions"] = "Small primary action set for the page. Keep working filters and surface-specific commands in a nearby `Toolbar`.",
             ["Outlet"] = "Optional cascading IPageHeaderOutlet owned by the host. Publishes PageHeaderPresentation on every parameter update so captured fragments stay current; clearing is scoped to the publishing owner. Invalidate only the toolbar and outlet renderers, not the routed body."
         },
@@ -844,7 +844,7 @@ public sealed partial class ComponentCatalogService
             ["Expanded"] = "Two-way collapse state. It is remembered by default per `MenuId` unless persistence is disabled or overridden.",
             ["AllowCollapse"] = "Shows the desktop rail collapse control while preserving the automatic small-screen top-menu behavior.",
             ["FillHeight"] = "Lets the menu share a bounded application shell height so measured overflow can move items to More.",
-            ["PersistExpandedState"] = "Stores expansion in localStorage. Disable when the application owns persistence explicitly.",
+            ["PersistExpandedState"] = "Stores expansion in localStorage only. Set false when the application loads and saves account-owned expansion, then bind Expanded to that state so local persistence cannot override it.",
             ["VisibleItemCapacity"] = "Optional fixed desktop capacity. Normally omit it and let measured available height control overflow.",
             ["ItemSelected"] = "Raised for pointer, keyboard, and externally driven selections; map item IDs or payloads to route or feature behavior here."
         },
@@ -928,7 +928,15 @@ public sealed partial class ComponentCatalogService
             [
                 "Default to `Compact=true` for operational pages and keep a concise `Description` when it prevents ambiguity.",
                 "Use `Stats` for supporting `CompactStatStrip` content, not a second row of large metric cards.",
-                "Keep only page-level actions in `Actions`; place working controls in a toolbar next to the surface they affect."
+                "Keep only page-level actions in `Actions`; place working controls in a toolbar next to the surface they affect.",
+                "A host using IPageHeaderOutlet should render title, stats, and actions together and omit the duplicate inline header. Scope help visibility to the active page owner; keep the routed body independent of toolbar invalidation."
+            ]),
+        ["ListPanelHeader"] = new(
+            ["Collection title, count, contextual help, and commands adjacent to the list."],
+            ["A duplicate page introduction or a separate full-width panel for each secondary command."],
+            [
+                "Use Dense=true with Count, HelpText, Actions, and Filters as needed. Place refresh, history, and recovery entry points in Actions instead of command-only rows above the collection.",
+                "HelpText is optional explanation, not an error outlet. Keep loading, pending operations, errors, and unknown outcomes visible next to the affected surface."
             ]),
         ["TextAreaInput"] = new(
             [
@@ -1001,6 +1009,7 @@ public sealed partial class ComponentCatalogService
             [
                 "Use the `Media`, `Header`, `Tags`, body content, and `Actions` slots so peer cards keep consistent anatomy.",
                 "Center and constrain top media, keep tags near identity or state, and place the small action set consistently at the footer.",
+                "Keep a visible theme-aware border around the entire card, including Actions, with a gap between neighbors. Verify ownership boundaries in light and dark themes without depending on shadows alone.",
                 "Legacy child-only composition remains valid for simple surfaces; do not add empty regions just to fill the template."
             ]),
         ["CardGrid"] = new(
@@ -1205,6 +1214,8 @@ public sealed partial class ComponentCatalogService
                 "Wrap the root interactive layout once and keep app-owned theme overrides in an app stylesheet loaded after BaseLib output.",
                 "Use `ThemeKey` for the `data-ui-theme` boundary and set `ColorScheme` explicitly for custom keys when native controls need light or dark browser styling.",
                 "Use current semantic tone variables from `Tailwind/theme.css`, pair foreground and background colors, and preserve fixed neutral colors where surfaces intentionally keep one appearance.",
+                "ThemeHost renders theme state; account storage belongs to the application. Resolve the user's saved theme before defaults, keep anonymous browser storage separate, and verify persistence after refresh and account changes.",
+                "Verify disabled labels, inline note text, placeholders, and open-dialog controls remain readable; do not leave light-theme text colors on a dark control fill.",
                 "Verify light-to-dark and dark-to-light switching on the same rendered surface, including open overlays and native form controls; do not hand-edit generated output CSS."
             ]),
         ["Layout"] = new(
@@ -1257,6 +1268,7 @@ public sealed partial class ComponentCatalogService
             ],
             [
                 "Give the menu one stable `MenuId`; use a matching `SideMenuService` scope and dispose `Subscribe` registrations.",
+                "For account-owned preferences set PersistExpandedState=false and bind Expanded to the loaded account value. Use collapsed as the initial default only when no preference exists; localStorage alone does not follow the account across devices.",
                 "Compose list-fed `Items` with declarative `<MenuItems>` only when all IDs are unique. Use `MoreItems` and `BottomItems` for their semantic regions.",
                 "Handle `ItemSelected` for pointer, keyboard, and external selection. Map stable IDs or typed payloads to routing; do not infer behavior from labels.",
                 "Let the component measure height for More overflow. Use `OverflowBehavior.AlwaysInMore` for secondary destinations and `PreferVisible` only for genuinely important ones.",
@@ -1301,7 +1313,8 @@ public sealed partial class ComponentCatalogService
                 "Use `DialogService` and one mounted `DialogHost` for service-driven flows; use controlled `IsOpen` state only when the owning component truly owns the lifecycle.",
                 "Prefer `DangerActionDialog` for destructive confirmation and `DialogScaffold` for a standard title, copy, body, and footer.",
                 "Choose `ModalSize.Compact` for short single-column forms, `Medium` for ordinary grouped forms, `Wide` for genuine multi-column review, and `Full` only for workbench-like tasks.",
-                "Use `DenseChrome=true` for short focused tasks and load dialog-only data when opening instead of front-loading the page."
+                "Use `DenseChrome=true` for short focused tasks and load dialog-only data when opening instead of front-loading the page.",
+                "For page help, start closed and clear open state when the owning page changes; keep operational errors outside optional help. Verify Escape, focus restoration, and readable disabled actions in both themes."
             ]),
         ["ContextMenu"] = new(
             [

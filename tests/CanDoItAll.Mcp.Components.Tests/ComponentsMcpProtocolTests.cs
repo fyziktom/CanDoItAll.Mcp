@@ -71,6 +71,12 @@ public sealed class ComponentsMcpProtocolTests
             var textArea = await client.CallToolAsync(
                 "component_get",
                 new Dictionary<string, object?> { ["component"] = "TextAreaInput" });
+            var disclosureRecommendation = await client.CallToolAsync(
+                "components_recommend",
+                new Dictionary<string, object?> { ["useCase"] = "optional form and collapsed form with retained draft" });
+            var helpRecommendation = await client.CallToolAsync(
+                "components_recommend",
+                new Dictionary<string, object?> { ["useCase"] = "on-demand help instead of an introductory banner" });
             var avatarRecommendation = await client.CallToolAsync(
                 "components_recommend",
                 new Dictionary<string, object?> { ["useCase"] = "agent colleague avatar with human portrait and optional robot identity" });
@@ -79,6 +85,8 @@ public sealed class ComponentsMcpProtocolTests
             Assert.False(recommendation.IsError is true);
             Assert.False(compactRecommendation.IsError is true);
             Assert.False(textArea.IsError is true);
+            Assert.False(disclosureRecommendation.IsError is true);
+            Assert.False(helpRecommendation.IsError is true);
             Assert.False(avatarRecommendation.IsError is true);
             var appShellOutput = appShell.StructuredContent is JsonElement appShellStructuredContent
                 ? appShellStructuredContent.GetRawText()
@@ -95,6 +103,12 @@ public sealed class ComponentsMcpProtocolTests
             Assert.Contains("CompactStatStrip", compactRecommendationOutput, StringComparison.Ordinal);
             Assert.Contains("compositionRules", compactRecommendationOutput, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("primary task", compactRecommendationOutput, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("unknown outcomes", compactRecommendationOutput, StringComparison.OrdinalIgnoreCase);
+            var disclosureOutput = JsonSerializer.Serialize(disclosureRecommendation.StructuredContent);
+            var helpOutput = JsonSerializer.Serialize(helpRecommendation.StructuredContent);
+            Assert.Contains("EditContext", disclosureOutput, StringComparison.Ordinal);
+            Assert.Contains("outside the disclosure", disclosureOutput, StringComparison.Ordinal);
+            Assert.Contains("focus restoration", helpOutput, StringComparison.Ordinal);
             var textAreaOutput = JsonSerializer.Serialize(textArea.StructuredContent);
             var avatarOutput = JsonSerializer.Serialize(avatarRecommendation.StructuredContent);
             Assert.Contains("TextAreaInput", textAreaOutput, StringComparison.Ordinal);

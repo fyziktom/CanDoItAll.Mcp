@@ -545,6 +545,43 @@ public sealed class ComponentCatalogServiceTests
         Assert.NotEmpty(defaultBaseLib.CompositionPlan);
     }
 
+    [Theory]
+    [InlineData("reclaim vertical space and wasted height in the first viewport", "ListPanelHeader", "Compact task-first", "unknown outcomes")]
+    [InlineData("optional form and collapsed form with a retained draft", "SurfaceCard", "retained draft", "EditContext")]
+    [InlineData("on-demand help instead of an introductory banner", "Dialog", "On-demand page help", "focus restoration")]
+    [InlineData("dark theme and menu preference with disabled options", "ThemeHost", "account-owned preferences", "PersistExpandedState=false")]
+    public void Recommendations_Discover_Page_Density_And_State_Ownership_Guidance(
+        string useCase, string expectedComponent, string expectedGuide, string requiredPlan) {
+        var service = CreateService();
+
+        var result = service.RecommendComponents(useCase);
+
+        Assert.Contains(result.Recommendations, item => item.Name == expectedComponent);
+        Assert.Contains(result.MatchedDecisionGuides, guide => guide.Contains(expectedGuide, StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(result.CompositionPlan, step => step.Contains(requiredPlan, StringComparison.Ordinal));
+        Assert.All(result.Recommendations, item => Assert.Equal(item.Name, service.GetComponent(item.Name).Name));
+    }
+
+    [Fact]
+    public void Page_Density_Guidance_Uses_Public_Slots_Without_Inventing_Help_Or_Account_Storage() {
+        var service = CreateService();
+
+        var header = service.GetComponent("PageHeader");
+        var listHeader = service.GetComponent("ListPanelHeader");
+        var menu = service.GetComponent("SideMenu");
+        var shell = service.GetAppShellGuide("full-height");
+
+        Assert.Contains(header.Parameters, parameter => parameter.Name == "Stats");
+        Assert.DoesNotContain(header.Parameters, parameter => parameter.Name == "Help");
+        Assert.Contains(listHeader.Parameters, parameter => parameter.Name == "HelpText");
+        Assert.Contains(listHeader.Parameters, parameter => parameter.Name == "Actions");
+        Assert.Contains(menu.Parameters, parameter => parameter.Name == "PersistExpandedState");
+        Assert.Contains(menu.Guidance.CompositionRules, rule => rule.Contains("account-owned", StringComparison.Ordinal));
+        Assert.Contains("<Stats>", shell.PageExample, StringComparison.Ordinal);
+        Assert.Contains("ListPanelHeader", shell.PageExample, StringComparison.Ordinal);
+        Assert.Contains(shell.LayoutRules, rule => rule.Contains("without rerendering or remounting", StringComparison.Ordinal));
+    }
+
     [Fact]
     public void All_Discovered_Components_Resolve_To_Existing_Source_Paths()
     {

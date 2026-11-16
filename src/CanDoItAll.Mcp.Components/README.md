@@ -110,6 +110,32 @@ Tooltip position should be chosen by the trigger's edge pressure and the next li
 
 When an agent uses non-default notification or tooltip placement, it should validate behavior with Playwright at the consumer's supported desktop viewports. Reusable BaseLib cross-viewport coverage remains a separate library concern.
 
+## Operational UI guidance
+
+Recommendations include the shared patterns proven in the desktop application:
+
+- Supporting statistics share the page title/action row, including when a host renders
+  `IPageHeaderOutlet`. Refresh and recovery entry points belong in existing collection headers.
+- Page help opens on demand and closes when its owner changes. Required alerts and unresolved
+  outcomes stay visible; settled empty recovery chrome can disappear without unmounting its owner.
+- Optional inline forms can use native `details`/`summary` inside a shared surface. The same form,
+  model, and `EditContext` remain mounted so collapsing preserves drafts and validation.
+- Card boundaries include their actions and remain distinct in both themes. Disabled text,
+  dialogs, and inline editors use readable paired colors; canvas backgrounds remain solid.
+- Theme and menu preferences belong to the consuming application's account store when they
+  follow a user across devices. Disable `SideMenu.PersistExpandedState` for that policy and bind
+  `Expanded` to the account value; the library does not implement account storage.
+
+Try `components_recommend` with `vertical space and first viewport`, `optional form with retained
+draft`, `on-demand page help`, or `dark theme and menu preference`. Existing canvas toolbar,
+node creation/editing, opened-workspace tabs, and human-avatar guidance remains available.
+
+Rebuild in source mode to reflect the current sibling Components contracts. The shared installed
+server uses its configured workspace/catalog roots, so consuming projects do not need their own
+MCP copy. Reconnect clients after replacing the installed artifact; an existing stdio process does
+not reload its assemblies. Validate `tools/list` and these recommendations against the installed
+entry point, not only a development build.
+
 ## Related Docs
 
 - [Repository overview](../../README.md)

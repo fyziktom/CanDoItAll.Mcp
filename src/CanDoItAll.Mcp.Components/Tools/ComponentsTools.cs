@@ -99,7 +99,7 @@ public sealed class ComponentsTools(
     }
 
     [McpServerTool(Name = "components_recommend", ReadOnly = true, Idempotent = true, OpenWorld = false, UseStructuredContent = true)]
-    [Description("Recommends the best non-WebGL shared components for a concrete use case, including compact page density, disclosure, metric hierarchy, card anatomy, form and dialog sizing. Returns required setup, per-component composition rules, an operational composition plan, alternatives, and exact follow-up MCP calls. Use this before choosing components or inventing custom UI structure.")]
+    [Description("Recommends the best non-WebGL shared components for a concrete use case, including page-height savings, inline stats, on-demand help, retained-draft disclosure, readable themes, card boundaries, form and dialog sizing. Returns required setup, per-component composition rules, an operational composition plan, alternatives, and exact follow-up MCP calls. Use this before choosing components or inventing custom UI structure.")]
     public Task<McpToolEnvelope<ComponentRecommendationData>> ComponentsRecommendAsync(
         string useCase,
         string? constraints = null,

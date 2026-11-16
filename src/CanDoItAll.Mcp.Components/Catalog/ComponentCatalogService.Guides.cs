@@ -181,12 +181,13 @@ public sealed partial class ComponentCatalogService
         new(
             "compact-operational-page",
             "Compact task-first operational page",
-            ["compact ui", "compact page", "dense page", "reduce spacing", "reduce padding", "above the fold", "avoid scrolling", "operational page", "task first"],
+            ["compact ui", "compact page", "dense page", "reduce spacing", "reduce padding", "above the fold", "avoid scrolling", "operational page", "task first", "page height", "vertical space", "first viewport", "wasted height"],
             [
                 new("PageScaffold", "Page boundary", "Keeps the page width, header, lead, rail, and work surface deliberate without adding wrapper stacks."),
                 new("PageHeader", "Compact orientation", "Keeps title, context, supporting stats, and actions in one compact header row."),
                 new("Toolbar", "Working controls", "Places filters and frequent commands beside the surface they affect."),
                 new("CompactStatStrip", "Supporting metrics", "Shows short numeric context inline without spending a card-sized region per value."),
+                new("ListPanelHeader", "Collection commands", "Keeps counts, refresh, history, and recovery entry points in the existing collection header."),
                 new("Tabs", "Progressive disclosure", "Keeps mutually exclusive modes out of the permanent vertical flow.")
             ],
             [
@@ -196,8 +197,60 @@ public sealed partial class ComponentCatalogService
             [
                 "Start with the primary task surface, then add only the orientation, controls, and supporting context needed to operate it.",
                 "Use `PageHeader Compact=\"true\"`, `LayoutGap.Small` or `LayoutGap.Medium`, and `CompactStatStrip` for supporting numbers; do not repeat page purpose in a second hero card.",
+                "Render supporting `Stats` beside the title and page actions, including when an `IPageHeaderOutlet` host renders the shared toolbar. Do not reserve a separate full-width statistics band when the header has room.",
+                "Put refresh, history, saved-reference, and recovery entry points in existing `ListPanelHeader.Actions` or `SectionHead` content beside the collection count. Keep a single filter row close to the collection rather than stacking command-only panels.",
+                "A settled empty recovery surface can omit its chrome, but keep its owner mounted and preserve loading, errors, pending operations, and unknown outcomes. Space savings must not hide unresolved state or change the original action target.",
+                "Move explanatory page help behind a labelled help action and a compact `Dialog` or `HelpPopover`; keep decision-critical alerts visible. Help should start closed and close when its page owner changes.",
                 "Move bounded create/edit flows into a correctly sized `Dialog` and mutually exclusive supporting views into `Tabs`; keep information required for the current decision visible.",
-                "Validate useful content at the target viewport. Compact means eliminating wasted space, not shrinking controls below accessible hit targets or forcing every region to minimum size."
+                "Validate the first useful row or canvas position at the same desktop viewport before and after the change. Preserve readable type, control hit targets, card boundaries, and one intentional scroll owner."
+            ]),
+        new(
+            "inline-disclosure",
+            "Optional inline form with retained draft",
+            ["optional form", "collapsed form", "inline disclosure", "preserve draft", "retained draft"],
+            [
+                new("SurfaceCard", "Existing region", "Hosts optional inline work without introducing another permanent section."),
+                new("FormStack", "Stable editor", "Keeps the form rhythm inside a disclosure while the application owns its draft and EditContext."),
+                new("Badge", "Collapsed summary", "Signals unsaved draft, saving, or review-required state beside the disclosure label."),
+                new("Alert", "Unresolved outcome", "Keeps actionable errors and recovery visible outside the collapsed form.")
+            ],
+            [new("Dialog", "Independent editor", "Use when an editor can safely load on open and close without losing required context.")],
+            [
+                "For an optional inline form, a native details/summary disclosure inside the existing `SurfaceCard` can start closed; do not invent a BaseLib Disclosure component or unmount the editor merely to hide it.",
+                "Keep the same mounted form, model, EditContext, and key when collapsing. Preserve unsaved text, validation, and in-flight saves; reset only through an explicit reset or completed-save policy.",
+                "Use the summary for the action label and an unsaved-draft, saving, or review-required badge. Keep result errors, pending operations, and unknown outcomes visible outside the disclosure with their original recovery callbacks.",
+                "Prove type, collapse, reopen, and submit or reset behavior; verify that the exact draft survives and no mutation is triggered by opening or closing."
+            ]),
+        new(
+            "page-help",
+            "On-demand page help",
+            ["page help", "on-demand help", "help dialog", "introductory banner"],
+            [
+                new("PageHeaderActionButton", "Discoverable help", "Keeps help reachable beside the page identity without spending a permanent content row."),
+                new("Dialog", "Readable explanation", "Presents longer help in a compact, dismissible task surface."),
+                new("HelpPopover", "Local explanation", "Keeps short section-specific help beside its heading.")
+            ],
+            [new("Alert", "Required context", "Use for warnings and outcomes that must stay visible before a decision.")],
+            [
+                "Use a labelled help action in `PageHeader.Actions` or `ListPanelHeader.HelpText`; BaseLib PageHeader has no Help slot. The application owns any help registration and open state.",
+                "Start help closed, retain it only while the same page owner is active, and clear it when that owner changes or disposes. Do not restore an open help dialog from an old visibility cookie on every visit.",
+                "Verify keyboard opening, Escape or Close, focus restoration to the trigger, and readable dark-theme content. Never move loading, errors, pending operations, or unknown outcomes into optional help."
+            ]),
+        new(
+            "theme-and-preferences",
+            "Readable themes and account-owned preferences",
+            ["dark theme", "dark mode", "theme preference", "menu preference", "disabled options"],
+            [
+                new("ThemeHost", "Theme boundary", "Applies paired semantic colors to the interactive shell and overlays."),
+                new("SideMenu", "Navigation preference", "Binds expanded state while the application chooses its persistence policy."),
+                new("Dialog", "Themed editing", "Keeps editing surfaces and disabled choices readable in the active theme.")
+            ],
+            [],
+            [
+                "Pair semantic surface, foreground, border, and disabled-control colors; do not apply a dark input fill while leaving its text in a light-theme status color. Disabled labels must remain readable and visibly unavailable.",
+                "The application owns authenticated theme and menu preferences in its account store so they follow the user across devices. Set SideMenu.PersistExpandedState=false and bind Expanded for account-owned state. ThemeHost and SideMenu do not provide account storage; browser-only persistence is appropriate for anonymous users or an explicit local-only policy.",
+                "Resolve saved preferences before applying defaults. Start navigation collapsed only when no saved value exists; do not overwrite an account preference during initial render or let one user's browser cache become another user's preference.",
+                "Check refresh, account changes, open dialogs, inline note editors, and both theme-switch directions. Keep canvas backgrounds solid and avoid decorative lighting or gradients behind the working surface."
             ]),
         new(
             "item-crud-dialog",
@@ -237,6 +290,7 @@ public sealed partial class ComponentCatalogService
             [
                 "Compose `Card` with `Media`, `Header`, `Tags`, body content, and `Actions` slots so peer cards keep the same visual rhythm.",
                 "Use a centered, constrained media region, keep tags adjacent to identity or state, and place the small action set consistently at the card footer.",
+                "Give each card a visible theme-aware border and separation from its neighbors, enclosing its actions as well as its content. Verify boundaries in both light and dark themes without relying on shadows alone.",
                 "Do not nest decorative cards or stretch sparse content to arbitrary equal heights. Switch to a list or grid when the content is primarily textual or tabular."
             ]),
         new(
@@ -484,6 +538,7 @@ public sealed partial class ComponentCatalogService
                 "A PageHeader outlet registration invalidates its toolbar renderers on every parameter update, including captured fragment changes. Subscribe only the toolbar, help, and statistics outlets; rerendering the routed body from that notification creates a feedback loop.",
                 "Use `PageScaffold FillHeight=\"true\"` for workspaces whose inner surface owns overflow; leave it false for document pages that scroll naturally.",
                 "Use `PageScaffoldMode.FocusWorkbench` only for dense workbench pages that intentionally use the full width.",
+                "In a shared header outlet, place supporting stats beside the title and actions rather than in a separate full-width band. Keep page help transient and closed initially; clear it on owner change without rerendering or remounting the routed body.",
                 "Use `Sidebar` for a generic custom rail, not around `SideMenu`. Nesting both creates duplicate width and scroll ownership.",
                 "Inside pages, prefer `Stack` for one dimension, `Grid` for explicit tracks, `Row` plus `Column` for inherited responsive tracks, and `Split` for one two-sided breakpoint."
             ],
@@ -498,6 +553,7 @@ public sealed partial class ComponentCatalogService
                 "Call `component_usage_examples` for `SideMenu` and open `/navigation#side-menu` for the canonical responsive proof.",
                 "Verify exactly one BaseLib service registration and one overlay host of each type.",
                 "Verify route changes update menu selection and menu selections navigate without duplicated callbacks.",
+                "Verify supporting stats share the title row, help starts closed, and optional forms preserve drafts after collapse/reopen. Check visible recovery outcomes, card boundaries, disabled text, and focus restoration in both themes.",
                 "Use browser assertions at desktop and constrained-height desktop viewports for application proof; build success cannot prove overflow, persistence, focus, or dropdown placement. Reusable BaseLib cross-viewport testing is a separate library concern."
             ]);
     }
@@ -794,16 +850,24 @@ public sealed partial class ComponentCatalogService
                             Title="Page title"
                             Description="State the purpose and current context."
                             Compact="true">
+                    <Stats>
+                        <Badge>@visibleCount visible</Badge>
+                    </Stats>
                     <Actions>
                         <PageHeaderActionButton Icon="add" Label="Create" Click="CreateAsync" />
+                        <PageHeaderActionButton Icon="help_outline" Label="Help" Click="ShowHelpAsync" />
                     </Actions>
                 </PageHeader>
             </Header>
 
-            <Grid Columns="1" ColumnsLg="2" Gap="LayoutGap.Medium">
-                <SectionCard Title="Primary work">...</SectionCard>
-                <SectionCard Title="Supporting context">...</SectionCard>
-            </Grid>
+            <Stack GapScale="LayoutGap.Small">
+                <ListPanelHeader Title="Items" Count="@visibleCount.ToString()" Dense="true">
+                    <Actions>
+                        <Button Click="RefreshAsync">Refresh</Button>
+                    </Actions>
+                </ListPanelHeader>
+                @ItemCollection
+            </Stack>
         </PageScaffold>
         """;
 
